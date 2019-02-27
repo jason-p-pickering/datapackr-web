@@ -98,9 +98,9 @@ shinyServer(function(input, output, session) {
       
       incProgress(0.1, detail = ("Validating your DataPack"))
       d<-datapackr::unPackData(inFile$datapath)
-    
+      
     })
-    
+    shinyjs::show("downloadData")
     return(d)
     
   }
