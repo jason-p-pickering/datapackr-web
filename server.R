@@ -117,11 +117,12 @@ shinyServer(function(input, output, session) {
   output$downloadData <- downloadHandler(
     filename = "SUBNAT_IMPATT.xlsx",
     content = function(file) {
+      
       download_data <- validation_results() %>% 
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"SUBNAT_IMPATT")
       
-      openxlsx::write.csv(download_data, file = file)
+      write.table(download_data, file = file, sep=",",row.names = false,col.names = TRUE,quote=TRUE)
     }
   )
   })
