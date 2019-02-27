@@ -57,7 +57,7 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Output", dataTableOutput("contents")),
-            tabPanel("Messages",   verbatimTextOutput('messages'))
+            tabPanel("Messages",   textOutput('messages'))
           ))
         ))
   }
@@ -125,8 +125,11 @@ shinyServer(function(input, output, session) {
       write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
     }
     
-    output$messages<- validation_results() %>% 
-      purrr::pluck(.,"info") %>%
-      purrr::pluck(.,"warningMsg")
+
   )
+  
+  output$messages<- renderText({validation_results() %>% 
+    purrr::pluck(.,"info") %>%
+    purrr::pluck(.,"warningMsg")})
+  
   })
