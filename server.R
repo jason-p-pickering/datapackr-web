@@ -122,7 +122,7 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"SUBNAT_IMPATT")
       
-      write.table(download_data, file = file, sep=",",row.names = false,col.names = TRUE,quote=TRUE)
+      write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
     }
   )
   })
