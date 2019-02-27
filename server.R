@@ -57,7 +57,7 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Output", dataTableOutput("contents")),
-            tabPanel("Messages",   tags$ul(uiOutput('messages')))
+            tabPanel("Messages",   verbatimTextOutput('messages'))
           ))
         ))
   }
@@ -115,7 +115,7 @@ shinyServer(function(input, output, session) {
   })
   
   output$downloadData <- downloadHandler(
-    filename = "SUBNAT_IMPATT.xlsx",
+    filename = "SUBNAT_IMPATT.csv",
     content = function(file) {
       
       download_data <- validation_results() %>% 
@@ -124,5 +124,9 @@ shinyServer(function(input, output, session) {
       
       write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
     }
+    
+    output$messages<- validation_results() %>% 
+      purrr::pluck(.,"info") %>%
+      purrr::pluck(.,"warningMsg")
   )
   })
