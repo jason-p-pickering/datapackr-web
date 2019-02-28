@@ -57,8 +57,8 @@ shinyServer(function(input, output, session) {
           ),
           mainPanel(tabsetPanel(
             type = "tabs",
-            tabPanel("Output", dataTableOutput("contents")),
-            tabPanel("Messages",   tags$ul(uiOutput('messages'))) 
+            tabPanel("Messages",   tags$ul(uiOutput('messages'))),
+            tabPanel("Output", dataTableOutput("contents"))
           ))
         ))
   }
