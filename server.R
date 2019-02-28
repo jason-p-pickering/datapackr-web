@@ -54,7 +54,9 @@ shinyServer(function(input, output, session) {
             ),
             tags$hr(),
             actionButton("validate","Validate"),
-            downloadButton("downloadData", "Download SUBNATT results")
+            tags$hr(),
+            downloadButton("downloadData", "Download SUBNATT results"),
+            downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
           ),
           mainPanel(tabsetPanel(
             type = "tabs",
@@ -90,6 +92,8 @@ shinyServer(function(input, output, session) {
   validate<-function() {
     
     shinyjs::hide("downloadData")
+    shinyjs::hide("downloadFlatPack")
+    
     if (!ready$ok) {return(NULL)}
   
     inFile <- input$file1
@@ -123,17 +127,21 @@ shinyServer(function(input, output, session) {
       arrange(indicatorCode)
   })
   
-  output$downloadData <- downloadHandler(
-    filename = "SUBNAT_IMPATT.csv",
+  output$downloadFlatPack <- downloadHandler(
+    filename = "flatpack.xlsx",
     content = function(file) {
       
       download_data <- validation_results() %>% 
-        purrr::pluck(.,"datim") %>%
-        purrr::pluck(.,"SUBNAT_IMPATT")
+        purrr::pluck(.,"data") 
       
-      write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
-    }
+      openxlsx::write.xlsx(download_data, file = file)
+    })
     
+    output$downloadData <- downloadHandler(
+      filename = "flatpack.xlsx",
+      content = function(file) {
+
+      }
 
   )
   
