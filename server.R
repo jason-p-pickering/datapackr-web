@@ -106,8 +106,8 @@ shinyServer(function(input, output, session) {
     withProgress(message = 'Validating file', value = 0,{
       
       incProgress(0.1, detail = ("Validating your DataPack"))
-      tryCatch({
-        d<- datapackr::unPackData(inFile$datapath)},
+      d<-tryCatch({
+        datapackr::unPackData(inFile$datapath)},
         error = function(e){
           return(e)
         })
@@ -168,7 +168,7 @@ shinyServer(function(input, output, session) {
     vr<-validation_results()
     
     if (inherits(vr,"error")) {
-      return(print(e$message))
+      return(print(vr$message))
     }
         
     messages <- validation_results() %>%
