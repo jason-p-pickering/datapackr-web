@@ -47,7 +47,8 @@ shinyServer(function(input, output, session) {
               "file1",
               "Choose data file:",
               accept = c(
-                "application/xlsx"
+                "application/xlsx",
+                ".xlsx"
               )
             ),
             tags$hr(),
@@ -57,7 +58,7 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Output", dataTableOutput("contents")),
-            tabPanel("Messages",   textOutput('messages'))
+            tabPanel("Messages",   tags$ul(uiOutput('messages'))) 
           ))
         ))
   }
@@ -97,10 +98,11 @@ shinyServer(function(input, output, session) {
     withProgress(message = 'Validating file', value = 0,{
       
       incProgress(0.1, detail = ("Validating your DataPack"))
-      d<-datapackr::unPackData(inFile$datapath)
+      d<- datapackr::unPackData(inFile$datapath)
       
     })
     shinyjs::show("downloadData")
+    
     return(d)
     
   }
@@ -128,8 +130,19 @@ shinyServer(function(input, output, session) {
 
   )
   
-  output$messages<- renderText({validation_results() %>% 
-    purrr::pluck(.,"info") %>%
-    purrr::pluck(.,"warningMsg")})
-  
+  output$messages <- renderUI({
+    messages <- validation_results() %>%
+      purrr::pluck(., "info") %>%
+      purrr::pluck(., "warningMsg")
+    
+    if (!is.null(messages))  {
+      lapply(messages, function(x)
+        tags$li(x))
+    } else
+    {
+      NULL
+    }
+    
   })
+  
+})
