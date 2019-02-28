@@ -110,7 +110,7 @@ shinyServer(function(input, output, session) {
       
     })
     shinyjs::show("downloadData")
-    
+    shinyjs::show("downloadFlatPack")
     return(d)
     
   }
