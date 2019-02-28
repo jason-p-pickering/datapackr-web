@@ -2,6 +2,7 @@ library(shiny)
 library(shinyjs)
 require(magrittr)
 require(purrr)
+require(dplyr)
 
 source("./utils.R")
 
@@ -53,12 +54,12 @@ shinyServer(function(input, output, session) {
             ),
             tags$hr(),
             actionButton("validate","Validate"),
-            downloadButton("downloadData", "Download validation results")
+            downloadButton("downloadData", "Download SUBNATT results")
           ),
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
-            tabPanel("Output", dataTableOutput("contents"))
+            tabPanel("MER Summary", dataTableOutput("contents"))
           ))
         ))
   }
@@ -114,9 +115,12 @@ shinyServer(function(input, output, session) {
   validation_results <- reactive({ validate() })
   
   output$contents <- renderDataTable({ 
-    validation_results() %>% 
-      purrr::pluck(.,"datim") %>%
-      purrr::pluck(.,"SUBNAT_IMPATT")
+    validation_results() %>%
+      purr::pluck(.,"data") %>%
+      purrr::pluck(.,"MER") %>%
+      group_by(indicatorCode) %>% 
+      summarize(value = sum(value)) %>% 
+      arrange(indicatorCode)
   })
   
   output$downloadData <- downloadHandler(
