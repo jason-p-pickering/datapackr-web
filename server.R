@@ -138,9 +138,14 @@ shinyServer(function(input, output, session) {
     })
     
     output$downloadData <- downloadHandler(
-      filename = "flatpack.xlsx",
+      filename = "SUBNAT_IMPATT.csv",
       content = function(file) {
-
+        download_data <- validation_results() %>% 
+          purrr::pluck(.,"datim") %>%	        
+          purrr::pluck(.,"data") %>% 
+          purrr::pluck(.,"SUBNAT_IMPATT")
+     
+         write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
       }
 
   )
