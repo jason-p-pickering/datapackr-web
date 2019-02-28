@@ -113,7 +113,7 @@ shinyServer(function(input, output, session) {
         })
       
     })
-    if (!inherits(e,"error") ) {
+    if (!inherits(d,"error") ) {
       shinyjs::show("downloadData")
       shinyjs::show("downloadFlatPack")
     }
@@ -128,7 +128,7 @@ shinyServer(function(input, output, session) {
   output$contents <- renderDataTable({ 
     
     vr<-validation_results()
-     if (!inherits(e,"error")){
+     if (!inherits(vr,"error")){
     vr %>%
       purrr::pluck(.,"data") %>%
       purrr::pluck(.,"MER") %>%
