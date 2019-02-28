@@ -78,7 +78,9 @@ shinyServer(function(input, output, session) {
   # password entry UI componenets:
   #   username and password text fields, login button
   output$uiLogin <- renderUI({
+    
     wellPanel(fluidRow(
+      img(src='pepfar.png', align = "center"),
       h4("Welcome to the DataPack Validation tool. Please login with your DATIM credentials:")
     ),
     fluidRow(
@@ -168,7 +170,7 @@ shinyServer(function(input, output, session) {
     vr<-validation_results()
     
     if (inherits(vr,"error")) {
-      paste0("ERROR! ,",vr$message)
+      paste0("ERROR! ",vr$message)
     }
         
     messages <- validation_results() %>%
