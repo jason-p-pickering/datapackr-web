@@ -116,7 +116,7 @@ shinyServer(function(input, output, session) {
   
   output$contents <- renderDataTable({ 
     validation_results() %>%
-      purr::pluck(.,"data") %>%
+      purrr::pluck(.,"data") %>%
       purrr::pluck(.,"MER") %>%
       group_by(indicatorCode) %>% 
       summarize(value = sum(value)) %>% 
