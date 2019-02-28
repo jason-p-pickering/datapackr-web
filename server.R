@@ -75,11 +75,14 @@ shinyServer(function(input, output, session) {
   # password entry UI componenets:
   #   username and password text fields, login button
   output$uiLogin <- renderUI({
-    wellPanel(
-      textInput("user_name", "User Name:",width = "600px"),
+    wellPanel(fluidRow(
+      h4("Welcome to the DataPack Validation tool. Please login with your DATIM credentials:")
+    ),
+    fluidRow(
+      textInput("user_name", "Username: ",width = "600px"),
       passwordInput("password", "Password:",width = "600px"),
-      actionButton("login_button", "Log in")
-    )
+      actionButton("login_button", "Log in!")
+    ))
   })
   
   
