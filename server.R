@@ -165,8 +165,9 @@ shinyServer(function(input, output, session) {
   
   output$messages <- renderUI({
     
+    vr<-validation_results()
     
-    if (inherits(e,"error")) {
+    if (inherits(vr,"error")) {
       return(print(e$message))
     }
         
