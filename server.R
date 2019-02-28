@@ -106,11 +106,18 @@ shinyServer(function(input, output, session) {
     withProgress(message = 'Validating file', value = 0,{
       
       incProgress(0.1, detail = ("Validating your DataPack"))
-      d<- datapackr::unPackData(inFile$datapath)
+      tryCatch({
+        d<- datapackr::unPackData(inFile$datapath)},
+        error = function(e){
+          return(e)
+        })
       
     })
-    shinyjs::show("downloadData")
-    shinyjs::show("downloadFlatPack")
+    if (!inherits(e,"error") ) {
+      shinyjs::show("downloadData")
+      shinyjs::show("downloadFlatPack")
+    }
+
     return(d)
     
   }
@@ -119,13 +126,19 @@ shinyServer(function(input, output, session) {
   validation_results <- reactive({ validate() })
   
   output$contents <- renderDataTable({ 
-    validation_results() %>%
+    
+    vr<-validation_results()
+     if (!inherits(e,"error")){
+    vr %>%
       purrr::pluck(.,"data") %>%
       purrr::pluck(.,"MER") %>%
       group_by(indicatorCode) %>% 
       summarize(value = sum(value)) %>% 
-      arrange(indicatorCode)
-  })
+      arrange(indicatorCode) } else {
+        NULL
+      }
+  
+    })
   
   output$downloadFlatPack <- downloadHandler(
     filename = "flatpack.xlsx",
@@ -151,6 +164,12 @@ shinyServer(function(input, output, session) {
   )
   
   output$messages <- renderUI({
+    
+    
+    if (inherits(e,"error")) {
+      return(print(e$message))
+    }
+        
     messages <- validation_results() %>%
       purrr::pluck(., "info") %>%
       purrr::pluck(., "warningMsg")
