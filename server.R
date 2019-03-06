@@ -148,7 +148,15 @@ shinyServer(function(input, output, session) {
     })
   
   output$downloadFlatPack <- downloadHandler(
-    filename = "flatpack.xlsx",
+    
+    filename = function() {
+      prefix <- "flatpack"
+      ou < -validation_results() %>% 
+        purrr::pluck(.,"info") %>%
+        purrr::pluck(.,"datapack_name")
+      date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      paste0(paste(prefix,ou,date,sep="_"),".xlsx")
+    },
     content = function(file) {
       
       download_data <- validation_results() %>% 
