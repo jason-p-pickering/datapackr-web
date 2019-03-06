@@ -116,6 +116,11 @@ shinyServer(function(input, output, session) {
       
     })
     if (!inherits(d,"error") ) {
+      #Filter any zeros
+      download_data$MER %<>% filter(.,value != 0)
+      download_data$SUBNAT_IMPATT %<>% filter(.,value != 0)
+      download_data$SNUxIM %<>% filter(., distribution != 0)
+      download_data$distributedMER %<>% filter(.,value != 0)
       shinyjs::show("downloadData")
       shinyjs::show("downloadFlatPack")
     }
@@ -148,11 +153,6 @@ shinyServer(function(input, output, session) {
       
       download_data <- validation_results() %>% 
         purrr::pluck(.,"data") 
-      
-      download_data$MER %<>% filter(.,value != 0)
-      download_data$SUBNAT_IMPATT %<>% filter(.,value != 0)
-      download_data$SNUxIM %<>% filter(, distribution != 0)
-      download_data$distributedMER %<>% filter(.,value != 0)
       
       openxlsx::write.xlsx(download_data, file = file)
       
