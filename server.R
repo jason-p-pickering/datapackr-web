@@ -149,15 +149,21 @@ shinyServer(function(input, output, session) {
       download_data <- validation_results() %>% 
         purrr::pluck(.,"data") 
       
+      download_data$MER %<>% filter(.,value != 0)
+      download_data$SUBNAT_IMPATT %<>% filter(.,value != 0)
+      download_data$SNUxIM %<>% filter(, distribution != 0)
+      download_data$distributedMER %<>% filter(.,value != 0)
+      
       openxlsx::write.xlsx(download_data, file = file)
+      
     })
     
     output$downloadData <- downloadHandler(
       filename = "SUBNAT_IMPATT.csv",
       content = function(file) {
+        
         download_data <- validation_results() %>% 
-          purrr::pluck(.,"datim") %>%	        
-          purrr::pluck(.,"data") %>% 
+          purrr::pluck(.,"datim") %>%
           purrr::pluck(.,"SUBNAT_IMPATT")
      
          write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
@@ -168,14 +174,16 @@ shinyServer(function(input, output, session) {
   output$messages <- renderUI({
     
     vr<-validation_results()
+    messages<-NULL
     
     if (inherits(vr,"error")) {
-      paste0("ERROR! ",vr$message)
+      messages <- paste0("ERROR! ",vr$message)
+    } else {
+      
+      messages <- validation_results() %>%
+        purrr::pluck(., "info") %>%
+        purrr::pluck(., "warningMsg")      
     }
-        
-    messages <- validation_results() %>%
-      purrr::pluck(., "info") %>%
-      purrr::pluck(., "warningMsg")
     
     if (!is.null(messages))  {
       lapply(messages, function(x)
