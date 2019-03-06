@@ -117,10 +117,10 @@ shinyServer(function(input, output, session) {
     })
     if (!inherits(d,"error") ) {
       #Filter any zeros
-      download_data$MER %<>% filter(.,value != 0)
-      download_data$SUBNAT_IMPATT %<>% filter(.,value != 0)
-      download_data$SNUxIM %<>% filter(., distribution != 0)
-      download_data$distributedMER %<>% filter(.,value != 0)
+      d$data$MER %<>% filter(.,value != 0)
+      d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
+      d$data$SNUxIM %<>% filter(., distribution != 0)
+      d$data$distributedMER %<>% filter(.,value != 0)
       shinyjs::show("downloadData")
       shinyjs::show("downloadFlatPack")
     }
