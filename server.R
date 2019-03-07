@@ -117,61 +117,59 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       
+      if (!inherits(d,"error") ) {
+        
+        #Filter any zeros
+        d$data$MER %<>% filter(.,value != 0)
+        d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
+        d$data$SNUxIM %<>% filter(., distribution != 0)
+        d$data$distributedMER %<>% filter(.,value != 0)
+        
+        incProgress(0.1, detail = ("Checking validation rules"))
+        
+        #Validation rule checking
+        vr_data <- d$datim$PSNUxIM
+        names(vr_data) <- c("dataElement",
+                            "period",
+                            "orgUnit",
+                            "categoryOptionCombo",
+                            "attributeOptionCombo",
+                            "value")
+        
+        vr_data$attributeOptionCombo <-
+          datimvalidation::remapMechs(vr_data$attributeOptionCombo,
+                                      getOption("organisationUnit"),
+                                      "code",
+                                      "id")
+        
+        datasets_uid<-c("nIHNMxuPUOR","sBv1dj90IX6")
+        
+        if ( Sys.info()['sysname'] == "Linux") {
+          
+          ncores <- parallel::detectCores() - 1
+          doMC::registerDoMC(cores=ncores)
+          is_parallel<-TRUE
+          
+        } else {
+          is_parallel<-FALSE
+        } 
+        vr_violations <- datimvalidation::validateData(vr_data,
+                                                       datasets = datasets_uid,
+                                                       parallel = is_parallel)
+        vr_rules<-getValidationRules()
+        cop_19_des<-getValidDataElements(datasets=datasets_uid)
+        match<-paste(unique(cop_19_des$dataelementuid),sep="",collapse="|")
+        vr_filter<-vr_rules[grepl(match,vr_rules$leftSide.expression) & grepl(match,vr_rules$rightSide.expression),"id"]
+        vr_violations<-vr_violations[ vr_violations$id %in% vr_filter,]
+        diff<-gsub(" <= ","/",vr_violations$formula)
+        vr_violations$diff<-sapply(diff,function(x) { round( ( eval(parse(text=x)) -1 ) * 100 , 2) })
+        
+        d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","mech_code","formula","diff")]
+        
+        shinyjs::show("downloadData")
+        shinyjs::show("downloadFlatPack")
+      }
     })
-    if (!inherits(d,"error") ) {
-      
-      #Filter any zeros
-      d$data$MER %<>% filter(.,value != 0)
-      d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
-      d$data$SNUxIM %<>% filter(., distribution != 0)
-      d$data$distributedMER %<>% filter(.,value != 0)
-      
-      incProgress(0.1, detail = ("Checking validation rules"))
-      
-      #Validation rule checking
-      vr_data <- d$datim$PSNUxIM
-      names(vr_data) <- c("dataElement",
-        "period",
-        "orgUnit",
-        "categoryOptionCombo",
-        "attributeOptionCombo",
-        "value")
-     
-      vr_data$attributeOptionCombo <-
-       datimvalidation::remapMechs(vr_data$attributeOptionCombo,
-                                   getOption("organisationUnit"),
-                                   "code",
-                                   "id")
-     
-     datasets_uid<-c("nIHNMxuPUOR","sBv1dj90IX6")
-     
-     if ( Sys.info()['sysname'] == "Linux") {
-       
-       ncores <- parallel::detectCores() - 1
-       doMC::registerDoMC(cores=ncores)
-       is_parallel<-TRUE
-       
-     } else {
-       is_parallel<-FALSE
-     } 
-     vr_violations <- datimvalidation::validateData(vr_data,
-                                                    datasets = datasets_uid,
-                                                    parallel = is_parallel)
-     vr_rules<-getValidationRules()
-     cop_19_des<-getValidDataElements(datasets=datasets_uid)
-     match<-paste(unique(cop_19_des$dataelementuid),sep="",collapse="|")
-     vr_filter<-vr_rules[grepl(match,vr_rules$leftSide.expression) & grepl(match,vr_rules$rightSide.expression),"id"]
-     vr_violations<-vr_violations[ vr_violations$id %in% vr_filter,]
-     diff<-gsub(" <= ","/",vr_violations$formula)
-     vr_violations$diff<-sapply(diff,function(x) { round( ( eval(parse(text=x)) -1 ) * 100 , 2) })
-
-     d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","mech_code","formula","diff")]
-    
-    shinyjs::show("downloadData")
-    shinyjs::show("downloadFlatPack")
-    
-    }
-
     return(d)
     
   }
@@ -216,19 +214,21 @@ shinyServer(function(input, output, session) {
     filename = function() {
       
       prefix <- "flatpack"
-      
-      ou < -validation_results() %>% 
-        purrr::pluck(.,"info") %>%
-        purrr::pluck(.,"datapack_name")
-      
+    
       date<-format(Sys.time(),"%Y%m%d_%H%M%S")
       
-      paste0(paste(prefix,ou,date,sep="_"),".xlsx")
+      paste0(paste(prefix,date,sep="_"),".xlsx")
     },
     content = function(file) {
       
       download_data <- validation_results() %>% 
-        purrr::pluck(.,"data") 
+        purrr::pluck(.,"data")
+      
+      vr_rules<-validation_results() %>% 
+        purrr::pluck(.,"datim") %>%
+        purrr::pluck(.,"vr_rules_check")
+      
+      download_data <- append(vr_rules,download_data)
       
       openxlsx::write.xlsx(download_data, file = file)
       
