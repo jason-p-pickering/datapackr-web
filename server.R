@@ -119,15 +119,18 @@ shinyServer(function(input, output, session) {
       
     })
     if (!inherits(d,"error") ) {
+      
       #Filter any zeros
       d$data$MER %<>% filter(.,value != 0)
       d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
       d$data$SNUxIM %<>% filter(., distribution != 0)
       d$data$distributedMER %<>% filter(.,value != 0)
       
+      incProgress(0.1, detail = ("Checking validation rules"))
+      
       #Validation rule checking
-     vr_data <- d$datim$PSNUxIM
-     names(vr_data) <- c("dataElement",
+      vr_data <- d$datim$PSNUxIM
+      names(vr_data) <- c("dataElement",
         "period",
         "orgUnit",
         "categoryOptionCombo",
@@ -141,8 +144,6 @@ shinyServer(function(input, output, session) {
                                    "id")
      
      datasets_uid<-c("nIHNMxuPUOR","sBv1dj90IX6")
-
-     incProgress(0.1, detail = ("Checking validation rules"))
      
      if ( Sys.info()['sysname'] == "Linux") {
        
@@ -156,12 +157,19 @@ shinyServer(function(input, output, session) {
      vr_violations <- datimvalidation::validateData(vr_data,
                                                     datasets = datasets_uid,
                                                     parallel = is_parallel)
-     vr_violations[,c("name","ou_name","period","mech_code","formula")]
-     
-    d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","period","mech_code","formula")]
+     vr_rules<-getValidationRules()
+     cop_19_des<-getValidDataElements(datasets=datasets_uid)
+     match<-paste(unique(cop_19_des$dataelementuid),sep="",collapse="|")
+     vr_filter<-vr_rules[grepl(match,vr_rules$leftSide.expression) & grepl(match,vr_rules$rightSide.expression),"id"]
+     vr_violations<-vr_violations[ vr_violations$id %in% vr_filter,]
+     diff<-gsub(" <= ","/",vr_violations$formula)
+     vr_violations$diff<-sapply(diff,function(x) { round( ( eval(parse(text=x)) -1 ) * 100 , 2) })
+
+     d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","mech_code","formula","diff")]
     
-     shinyjs::show("downloadData")
+    shinyjs::show("downloadData")
     shinyjs::show("downloadFlatPack")
+    
     }
 
     return(d)
