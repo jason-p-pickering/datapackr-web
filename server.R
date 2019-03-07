@@ -3,6 +3,8 @@ library(shinyjs)
 require(magrittr)
 require(purrr)
 require(dplyr)
+require(datimvalidation)
+
 
 source("./utils.R")
 
@@ -61,7 +63,8 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
-            tabPanel("MER Summary", dataTableOutput("contents"))
+            tabPanel("MER Summary", dataTableOutput("contents")),
+            tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
         ))
   }
@@ -121,8 +124,44 @@ shinyServer(function(input, output, session) {
       d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
       d$data$SNUxIM %<>% filter(., distribution != 0)
       d$data$distributedMER %<>% filter(.,value != 0)
-      shinyjs::show("downloadData")
-      shinyjs::show("downloadFlatPack")
+      
+      #Validation rule checking
+     vr_data <- d$datim$PSNUxIM
+     names(vr_data) <- c("dataElement",
+        "period",
+        "orgUnit",
+        "categoryOptionCombo",
+        "attributeOptionCombo",
+        "value")
+     
+      vr_data$attributeOptionCombo <-
+       datimvalidation::remapMechs(vr_data$attributeOptionCombo,
+                                   getOption("organisationUnit"),
+                                   "code",
+                                   "id")
+     
+     datasets_uid<-c("nIHNMxuPUOR","sBv1dj90IX6")
+
+     incProgress(0.1, detail = ("Checking validation rules"))
+     
+     if ( Sys.info()['sysname'] == "Linux") {
+       
+       ncores <- parallel::detectCores() - 1
+       doMC::registerDoMC(cores=ncores)
+       is_parallel<-TRUE
+       
+     } else {
+       is_parallel<-FALSE
+     } 
+     vr_violations <- datimvalidation::validateData(vr_data,
+                                                    datasets = datasets_uid,
+                                                    parallel = is_parallel)
+     vr_violations[,c("name","ou_name","period","mech_code","formula")]
+     
+    d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","period","mech_code","formula")]
+    
+     shinyjs::show("downloadData")
+    shinyjs::show("downloadFlatPack")
     }
 
     return(d)
@@ -147,14 +186,35 @@ shinyServer(function(input, output, session) {
   
     })
   
+  
+  output$vr_rules <- renderDataTable({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error")){
+      
+      vr %>%
+        purrr::pluck(.,"datim") %>%
+        purrr::pluck(.,"vr_rules_check")  
+      
+      } else {
+          NULL
+        }
+    
+  })
+  
   output$downloadFlatPack <- downloadHandler(
     
     filename = function() {
+      
       prefix <- "flatpack"
+      
       ou < -validation_results() %>% 
         purrr::pluck(.,"info") %>%
         purrr::pluck(.,"datapack_name")
+      
       date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      
       paste0(paste(prefix,ou,date,sep="_"),".xlsx")
     },
     content = function(file) {
