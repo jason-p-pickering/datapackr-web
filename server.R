@@ -3,6 +3,8 @@ library(shinyjs)
 require(magrittr)
 require(purrr)
 require(dplyr)
+require(datimvalidation)
+
 
 source("./utils.R")
 
@@ -61,7 +63,8 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
-            tabPanel("MER Summary", dataTableOutput("contents"))
+            tabPanel("MER Summary", dataTableOutput("contents")),
+            tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
         ))
   }
@@ -114,17 +117,16 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       
+      if (!inherits(d,"error") ) {
+        
+        d<- filterZeros(d)
+        incProgress(0.1, detail = ("Checking validation rules"))
+        d<-validatePSNUData(d)
+        
+        shinyjs::show("downloadData")
+        shinyjs::show("downloadFlatPack")
+      }
     })
-    if (!inherits(d,"error") ) {
-      #Filter any zeros
-      d$data$MER %<>% filter(.,value != 0)
-      d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
-      d$data$SNUxIM %<>% filter(., distribution != 0)
-      d$data$distributedMER %<>% filter(.,value != 0)
-      shinyjs::show("downloadData")
-      shinyjs::show("downloadFlatPack")
-    }
-
     return(d)
     
   }
@@ -147,20 +149,43 @@ shinyServer(function(input, output, session) {
   
     })
   
+  
+  output$vr_rules <- renderDataTable({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error")){
+      
+      vr %>%
+        purrr::pluck(.,"datim") %>%
+        purrr::pluck(.,"vr_rules_check")  
+      
+      } else {
+          NULL
+        }
+    
+  })
+  
   output$downloadFlatPack <- downloadHandler(
     
     filename = function() {
+      
       prefix <- "flatpack"
-      ou < -validation_results() %>% 
-        purrr::pluck(.,"info") %>%
-        purrr::pluck(.,"datapack_name")
+    
       date<-format(Sys.time(),"%Y%m%d_%H%M%S")
-      paste0(paste(prefix,ou,date,sep="_"),".xlsx")
+      
+      paste0(paste(prefix,date,sep="_"),".xlsx")
     },
     content = function(file) {
       
       download_data <- validation_results() %>% 
-        purrr::pluck(.,"data") 
+        purrr::pluck(.,"data")
+      
+      vr_rules<-validation_results() %>% 
+        purrr::pluck(.,"datim") %>%
+        purrr::pluck(.,"vr_rules_check")
+      
+      download_data$validation_rules <- vr_rules
       
       openxlsx::write.xlsx(download_data, file = file)
       
