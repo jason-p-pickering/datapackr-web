@@ -181,6 +181,11 @@ shinyServer(function(input, output, session) {
       download_data <- validation_results() %>% 
         purrr::pluck(.,"data")
       
+
+      download_data$SNUXIM <- adornMechanisms(download_data$SNUXIM)
+      download_data$distributedMER <- adornMechanisms(download_data$distributedMER)
+      
+
       vr_rules<-validation_results() %>% 
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"vr_rules_check")

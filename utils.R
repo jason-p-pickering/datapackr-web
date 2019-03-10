@@ -74,3 +74,13 @@ validatePSNUData<-function(d) {
   d
   
 }
+
+
+adornMechanisms<-function(d) {
+  
+  url <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv")
+  mechs <- readr::read_csv(url) %>% 
+    dplyr::select(mechanism,partner,agency,ou)
+  
+  d %>% dplyr::left_join(., by=c("mechanismCode" = "mechanism"))
+}
