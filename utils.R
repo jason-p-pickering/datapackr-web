@@ -82,5 +82,5 @@ adornMechanisms<-function(d) {
   mechs <- readr::read_csv(url) %>% 
     dplyr::select(mechanism,partner,agency,ou)
   
-  d %>% dplyr::left_join(., by=c("mechanismCode" = "mechanism"))
+  d %>% dplyr::left_join(.,mechs, by=c("mechanismCode" = "mechanism"))
 }
