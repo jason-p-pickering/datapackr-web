@@ -83,7 +83,4 @@ adornMechanisms<-function(d) {
     dplyr::select(mechanism,partner,agency,ou)
   
   d %>% dplyr::left_join(., by=c("mechanismCode" = "mechanism"))
-  
 }
-
-
