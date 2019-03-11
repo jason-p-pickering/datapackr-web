@@ -33,7 +33,8 @@ filterZeros<-function(d) {
 validatePSNUData<-function(d) {
   
   #Validation rule checking
-  vr_data <- d$datim$PSNUxIM
+  vr_data <- d$datim$PSNUxIM %>%
+    
   names(vr_data) <- c("dataElement",
                       "period",
                       "orgUnit",
@@ -80,9 +81,11 @@ adornMechanisms <- function(d) {
   
   cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
   
-  if (file.exists(cached_mechs)) {
-    mechs <-readRDS(cached_mechs)
+  if (file.access(cached_mechs,4)) {
     
+    mechs <-readRDS(cached_mechs)
+    print(mechs)
+    stop("BOO!")
   } else {
     
     mechs <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv") %>% 
@@ -93,6 +96,6 @@ adornMechanisms <- function(d) {
     
   }
   
-  dplyr::left_join( d , mechs, by= "mechanismCode" )
+  dplyr::left_join( d , mechs, by = "mechanismCode" )
 
   }

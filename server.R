@@ -119,11 +119,12 @@ shinyServer(function(input, output, session) {
       
       if (!inherits(d,"error") ) {
         
-        d<- filterZeros(d)
+        d <- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
         d <- validatePSNUData(d)
+        incProgress(0.1, detail = ("Producing download format"))
         d$data$distributedMER <- adornMechanisms(d$data$distributedMER)
-        d$data$SNUxIM <- adornMechanisms(d$data$SNUxIM)
+        #d$data$SNUxIM <- adornMechanisms(d$data$SNUxIM)
         shinyjs::show("downloadData")
         shinyjs::show("downloadFlatPack")
       }
