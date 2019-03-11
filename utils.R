@@ -79,6 +79,7 @@ validatePSNUData<-function(d) {
 adornMechanisms<-function(d) {
   
   cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
+  
   if (file.exists(cached_mechs)) {
     mechs <<-readRDS(cached_mechs)
   } else {
@@ -91,8 +92,6 @@ adornMechanisms<-function(d) {
     
   }
   
-
-  
-  dplyr::left_join(d ,mechs, by=c("mechanismCode" = "mechanism"))
+  dplyr::left_join( d , mechs, by= "mechanismCode" )
 
   }
