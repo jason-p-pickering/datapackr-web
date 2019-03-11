@@ -121,8 +121,9 @@ shinyServer(function(input, output, session) {
         
         d<- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
-        d<-validatePSNUData(d)
-        
+        d <- validatePSNUData(d)
+        d$data$distributedMER <- adornMechanisms(d$data$distributedMER)
+        d$data$SNUxIM <- adornMechanisms(d$data$SNUxIM)
         shinyjs::show("downloadData")
         shinyjs::show("downloadFlatPack")
       }
@@ -181,10 +182,6 @@ shinyServer(function(input, output, session) {
       download_data <- validation_results() %>% 
         purrr::pluck(.,"data")
       
-      download_data$SNUXIM <- adornMechanisms(download_data$SNUXIM)
-      download_data$distributedMER <- adornMechanisms(download_data$distributedMER)
-      
-
       vr_rules<-validation_results() %>% 
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"vr_rules_check")

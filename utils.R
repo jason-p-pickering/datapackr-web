@@ -76,12 +76,13 @@ validatePSNUData<-function(d) {
 }
 
 
-adornMechanisms<-function(d) {
+adornMechanisms <- function(d) {
   
   cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
   
   if (file.exists(cached_mechs)) {
-    mechs <<-readRDS(cached_mechs)
+    mechs <-readRDS(cached_mechs)
+    
   } else {
     
     mechs <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv") %>% 
