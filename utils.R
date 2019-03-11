@@ -33,7 +33,7 @@ filterZeros<-function(d) {
 validatePSNUData<-function(d) {
   
   #Validation rule checking
-  vr_data <- d$datim$PSNUxIM %>%
+  vr_data <- d$datim$PSNUxIM
     
   names(vr_data) <- c("dataElement",
                       "period",
