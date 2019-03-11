@@ -78,9 +78,17 @@ validatePSNUData<-function(d) {
 
 adornMechanisms<-function(d) {
   
-  url <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv")
-  mechs <- readr::read_csv(url) %>% 
-    dplyr::select(mechanism,partner,agency,ou)
+  if (file.exists("./mechs.rda")) {
+    load("./mechs.rda")
+  } else {
+    mechs <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv") %>% 
+      httr::GET() %>% 
+      httr::content(., "text") %>% 
+      readr::read_csv(col_names = TRUE) %>% 
+      dplyr::select(mechanism,partner,agency,ou)
+    
+  }
   
-  d %>% dplyr::left_join(.,mechs, by=c("mechanismCode" = "mechanism"))
+  
+  dplyr::left_join(d ,mechs, by=c("mechanismCode" = "mechanism"))
 }
