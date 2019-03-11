@@ -78,17 +78,21 @@ validatePSNUData<-function(d) {
 
 adornMechanisms<-function(d) {
   
-  if (file.exists("./mechs.rda")) {
-    load("./mechs.rda")
+  cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
+  if (file.exists(cached_mechs)) {
+    mechs <<-readRDS(cached_mechs)
   } else {
+    
     mechs <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv") %>% 
       httr::GET() %>% 
       httr::content(., "text") %>% 
       readr::read_csv(col_names = TRUE) %>% 
-      dplyr::select(mechanism,partner,agency,ou)
+      dplyr::select(mechanismCode="code",partner,agency,ou)
     
   }
   
+
   
   dplyr::left_join(d ,mechs, by=c("mechanismCode" = "mechanism"))
-}
+
+  }
