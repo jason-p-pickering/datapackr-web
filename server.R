@@ -4,6 +4,7 @@ require(magrittr)
 require(purrr)
 require(dplyr)
 require(datimvalidation)
+require(ggplot2)
 
 
 source("./utils.R")
@@ -63,7 +64,7 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
-            tabPanel("MER Summary", dataTableOutput("contents")),
+            tabPanel("HTS Modality Summary", plot("modality_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
         ))
@@ -136,20 +137,20 @@ shinyServer(function(input, output, session) {
   
   validation_results <- reactive({ validate() })
   
-  output$contents <- renderDataTable({ 
+  output$modality_summary <- renderPlot({ 
     
     vr<-validation_results()
-     if (!inherits(vr,"error")){
-    vr %>%
-      purrr::pluck(.,"data") %>%
-      purrr::pluck(.,"MER") %>%
-      group_by(indicatorCode) %>% 
-      summarize(value = sum(value)) %>% 
-      arrange(indicatorCode) } else {
-        NULL
-      }
-  
-    })
+    if (!inherits(vr,"error")){
+      vr  %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"MER") %>%
+        adornMERData() %>%
+        modalitySummaryChart ()
+    } else {
+      NULL
+    }
+    
+  })
   
   
   output$vr_rules <- renderDataTable({ 
