@@ -192,8 +192,7 @@ modalitySummaryChart<-function(df) {
     
   hts_mods %>% 
     ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
-    geom_bar(stat="identity",
-             position = position_stack(reverse = TRUE))
+    geom_col()
   
   
 }
