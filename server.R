@@ -64,7 +64,7 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
-            tabPanel("HTS Modality Summary", plot("modality_summary")),
+            tabPanel("HTS Modality Summary", plotOutput("modality_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
         ))
