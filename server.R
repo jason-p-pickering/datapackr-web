@@ -140,17 +140,18 @@ shinyServer(function(input, output, session) {
   output$modality_summary <- renderPlot({ 
     
     vr<-validation_results()
+    
     if (!inherits(vr,"error")){
       vr  %>% 
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"MER") %>%
         adornMERData() %>%
-        modalitySummaryChart ()
+        modalitySummaryChart()
     } else {
       NULL
     }
     
-  })
+  },height = 400,width = 600)
   
   
   output$vr_rules <- renderDataTable({ 
