@@ -141,12 +141,13 @@ shinyServer(function(input, output, session) {
     
     vr<-validation_results()
     
-    if (!inherits(vr,"error")){
+    if (!inherits(vr,"error") & !is.null(vr)){
       vr  %>% 
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"MER") %>%
         adornMERData() %>%
         modalitySummaryChart()
+      
     } else {
       NULL
     }
