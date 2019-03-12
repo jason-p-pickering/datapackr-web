@@ -1,4 +1,5 @@
 require(datapackr)
+require(scales)
 options(shiny.maxRequestSize=70*1024^2)
 options("baseurl" = "http://127.0.0.1:8080/")
 
