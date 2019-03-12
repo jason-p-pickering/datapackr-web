@@ -187,7 +187,8 @@ modalitySummaryChart<-function(df) {
     dplyr::group_by(modality,resultstatus) %>% 
     dplyr::summarise(value=sum(value)) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(modality, desc(resultstatus))
+    dplyr::arrange(modality, desc(resultstatus)) %>% 
+    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive")))
     
     
   hts_mods %>% 
