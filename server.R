@@ -64,6 +64,7 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
+            RtabPanel("Indicator summary", dataTableOutput("indicator_summary")),
             tabPanel("HTS Modality Summary", plotOutput("modality_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
@@ -140,6 +141,23 @@ shinyServer(function(input, output, session) {
   
   
   validation_results <- reactive({ validate() })
+  
+  
+  output$indicator_summary<-renderDataTable({
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      vr  %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"MER") %>%
+        group_by(indicator,agency, numeratordenom,disaggregate) %>% 
+        summarise(value = sum(value))
+      
+    } else {
+      NULL
+    }
+  })
   
   output$modality_summary <- renderPlot({ 
     
