@@ -195,7 +195,8 @@ modalitySummaryChart<-function(df) {
     ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
     geom_col() +
     scale_y_continuous(labels = scales::comma) +
-    coord_flip()    
+    coord_flip() +
+    scale_fill_manual(values = c("#548dc0", "#59BFB3"))
   
   
 }
