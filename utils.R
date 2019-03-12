@@ -1,4 +1,5 @@
 require(datapackr)
+require(scales)
 options(shiny.maxRequestSize=100*1024^2)
 options("baseurl" = "http://127.0.0.1:8080/")
 
@@ -185,22 +186,30 @@ adornMERData<-function(df) {
 
 modalitySummaryChart<-function(df) {
   
-  hts_mods  <-  df %>% 
+   df %>% 
     dplyr::filter(!is.na(modality)) %>%
     dplyr::group_by(modality,resultstatus) %>% 
     dplyr::summarise(value=sum(value)) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(modality, desc(resultstatus))
-    
-   legend_title <- "HIV Status"
-   
-    ggplot() + 
-    geom_bar(aes(y=value,x=modality,fill=resultstatus),data=hts_mods,stat="identity") +
-      scale_y_continuous(labels = scales::comma) +
-      labs(y = "FY20 Target",
-           x= "Modality") + 
-    scale_fill_manual(legend_title,values=c("#CC6666", "#9999CC"))
-      
-  
+    dplyr::arrange(modality, desc(resultstatus)) %>% 
+    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive")))  %>% 
+    ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
+    geom_col() +
+    scale_y_continuous(labels = scales::comma) +
+    coord_flip() +
+    scale_fill_manual(values = c("#548dc0", "#59BFB3")) +
+    labs(y = "", x = "",
+         title = "COP19/FY20 Testing Targets",
+         subtitle = "modalities ordered by total tests") +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          text = element_text(color = "#595959", size = 14),
+          plot.title = element_text(face = "bold"),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          panel.grid.major.x = element_line(color = "#595959"),
+          panel.grid.minor.x = element_line(color = "#595959"),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank())
   
 }
