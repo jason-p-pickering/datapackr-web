@@ -22,10 +22,10 @@ DHISLogin<-function(baseurl, username, password) {
 filterZeros<-function(d) {
   
   #Filter any zeros
-  d$data$MER %<>% filter(.,value != 0)
-  d$data$SUBNAT_IMPATT %<>% filter(.,value != 0)
-  d$data$SNUxIM %<>% filter(., distribution != 0)
-  d$data$distributedMER %<>% filter(.,value != 0)
+  d$data$MER %<>% dplyr::filter(.,value != 0)
+  d$data$SUBNAT_IMPATT %<>% dplyr::filter(.,value != 0)
+  d$data$SNUxIM %<>% dplyr::filter(., distribution != 0)
+  d$data$distributedMER %<>% dplyr::filter(.,value != 0)
   
   d
 }
