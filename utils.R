@@ -199,7 +199,17 @@ modalitySummaryChart<-function(df) {
     scale_fill_manual(values = c("#548dc0", "#59BFB3")) +
     labs(y = "", x = "",
          title = "COP19/FY20 Testing Targets",
-         subtitle = "modalities ordered by total tests")
+         subtitle = "modalities ordered by total tests") +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          text = element_text(color = "#595959", size = 14),
+          plot.title = element_text(face = "bold"),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          panel.grid.major.x = element_line(color = "#595959"),
+          panel.grid.minor.x = element_line(color = "#595959"),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank())
   
   
 }
