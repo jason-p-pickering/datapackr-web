@@ -124,8 +124,11 @@ shinyServer(function(input, output, session) {
         incProgress(0.1, detail = ("Checking validation rules"))
         d <- validatePSNUData(d)
         incProgress(0.1, detail = ("Producing download format"))
-        d$data$distributedMER <- adornMechanisms(d$data$distributedMER)
-        d$data$SNUxIM <- adornMechanisms(d$data$SNUxIM)
+        d$data$distributedMER %<>% adornMechanisms()
+        d$data$SNUxIM %<>% adornMechanisms()
+        d$data$MER %<>% adornMERData()
+        d$data$distributedMER  %<>%  adornMERData()
+        
         shinyjs::show("downloadData")
         shinyjs::show("downloadFlatPack")
       }
