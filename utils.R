@@ -54,22 +54,41 @@ validatePSNUData<-function(d) {
     
     ncores <- parallel::detectCores() - 1
     doMC::registerDoMC(cores=ncores)
-    is_parallel<-TRUE
+    is_parallel <- TRUE
     
   } else {
-    is_parallel<-FALSE
+    is_parallel <- FALSE
   } 
   vr_violations <- datimvalidation::validateData(vr_data,
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
-  vr_rules<-getValidationRules()
-  cop_19_des<-getValidDataElements(datasets=datasets_uid)
-  match<-paste(unique(cop_19_des$dataelementuid),sep="",collapse="|")
-  vr_filter<-vr_rules[grepl(match,vr_rules$leftSide.expression) & grepl(match,vr_rules$rightSide.expression),"id"]
-  vr_violations<-vr_violations[ vr_violations$id %in% vr_filter,]
-  diff<-gsub(" <= ","/",vr_violations$formula)
-  vr_violations$diff<-sapply(diff,function(x) { round( ( eval(parse(text=x)) -1 ) * 100 , 2) })
   
+  rules_to_keep <- c(
+    "ZuX9Ck27Bb2",
+    "L76D9NGEPRS",
+    "DztKZSt84yx",
+    "rVVZmdG1KTb",
+    "zEOFo6X436M",
+    "oVtpQHVVeCV",
+    "r0CC6MQW5zc",
+    "vrS3kAtlJ4F",
+    "WB338HNucS7",
+    "tiagZGzSh6G",
+    "vkFHYHgfqCf",
+    "coODsuNsoXu",
+    "qOnTyseQXv8",
+    "Ry93Kc34Zwg",
+    "g0XwMGLB5XP",
+    "eb02xBNx7bD",
+    "SNzoIyNuanF"
+  )
+  
+  vr_violations<-vr_violations[ vr_violations$id %in% rules_to_keep,]
+  
+  diff<-gsub(" <= ","/",vr_violations$formula)
+  
+  vr_violations$diff<-sapply(diff,function(x) { round( ( eval(parse(text=x)) -1 ) * 100 , 2) })
+  vr_violations %>% dplyr::filter(diff >= 5)
   d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","mech_code","formula","diff")]
   
   d
@@ -84,8 +103,7 @@ adornMechanisms <- function(d) {
   if (file.access(cached_mechs,4)) {
     
     mechs <-readRDS(cached_mechs)
-    print(mechs)
-    stop("BOO!")
+
   } else {
     
     mechs <- paste0(getOption("baseurl"),"api/sqlViews/fgUtV6e9YIX/data.csv") %>% 
