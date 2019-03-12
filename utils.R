@@ -1,6 +1,6 @@
 require(datapackr)
 require(scales)
-options(shiny.maxRequestSize=70*1024^2)
+options(shiny.maxRequestSize=100*1024^2)
 options("baseurl" = "http://127.0.0.1:8080/")
 
 DHISLogin<-function(baseurl, username, password) {
@@ -63,7 +63,6 @@ validatePSNUData<-function(d) {
   vr_violations <- datimvalidation::validateData(vr_data,
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
-  
   rules_to_keep <- c(
     "ZuX9Ck27Bb2",
     "L76D9NGEPRS",
@@ -88,9 +87,14 @@ validatePSNUData<-function(d) {
   
   diff<-gsub(" <= ","/",vr_violations$formula)
   
-  vr_violations$diff<-sapply(diff,function(x) { round( ( eval(parse(text=x)) -1 ) * 100 , 2) })
-  vr_violations %<>% dplyr::filter(diff >= 5)
-  d$datim$vr_rules_check <-vr_violations[,c("name","ou_name","mech_code","formula","diff")]
+  vr_violations$diff <-
+    sapply(diff, function(x) {
+      round((eval(parse(text = x)) - 1) * 100 , 2)
+    })
+  
+  d$datim$vr_rules_check  %<>% dplyr::filter(diff >= 5) %>%
+    dplyr::select(name,ou_name,mech_code,formula,diff) %%
+    dplyr::mutate(name = gsub(pattern = "DSD,","",name)) 
   
   d
   
@@ -182,16 +186,13 @@ adornMERData<-function(df) {
 
 modalitySummaryChart<-function(df) {
   
-  hts_mods  <-  df %>% 
+   df %>% 
     dplyr::filter(!is.na(modality)) %>%
     dplyr::group_by(modality,resultstatus) %>% 
     dplyr::summarise(value=sum(value)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(modality, desc(resultstatus)) %>% 
-    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive")))
-    
-    
-  hts_mods %>% 
+    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive")))  %>% 
     ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
     geom_col() +
     scale_y_continuous(labels = scales::comma) +
@@ -210,6 +211,5 @@ modalitySummaryChart<-function(df) {
           panel.grid.minor.x = element_line(color = "#595959"),
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank())
-  
   
 }
