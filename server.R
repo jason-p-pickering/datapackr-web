@@ -48,7 +48,7 @@ shinyServer(function(input, output, session) {
             shinyjs::useShinyjs(),
             fileInput(
               "file1",
-              "Choose data file:",
+              "Choose DataPack (Must be XLSX!):",
               accept = c(
                 "application/xlsx",
                 ".xlsx"
