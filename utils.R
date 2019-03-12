@@ -188,9 +188,15 @@ modalitySummaryChart<-function(df) {
     dplyr::ungroup() %>%
     dplyr::arrange(modality, desc(resultstatus))
     
+   legend_title <- "HIV Status"
+   
     ggplot() + 
-    geom_bar(aes(y=value,x=modality,fill=resultstatus),data=hts_mods,stat="identity",
-             position = position_stack(reverse = TRUE))
+    geom_bar(aes(y=value,x=modality,fill=resultstatus),data=hts_mods,stat="identity") +
+      scale_y_continuous(labels = scales::comma) +
+      labs(y = "FY20 Target",
+           x= "Modality") + 
+    scale_fill_manual(legend_title,values=c("#CC6666", "#9999CC"))
+      
   
   
 }
