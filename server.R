@@ -119,7 +119,7 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       
-      if (!inherits(d,"error") ) {
+      if (!inherits(d,"error") % !is.null(d)) {
         
         d <- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
