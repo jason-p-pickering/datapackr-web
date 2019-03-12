@@ -91,7 +91,7 @@ validatePSNUData<-function(d) {
   
   vr_violations %<>% dplyr::filter(diff >= 5) %>%
     dplyr::select(name,ou_name,mech_code,formula,diff) %%
-    dplyr::mutate(name = gsub(pattern = " DSD,","",name)) 
+    dplyr::mutate(name = gsub(pattern = "DSD,","",name)) 
 
   d$datim$vr_rules_check 
   d
