@@ -186,14 +186,15 @@ adornMERData<-function(df) {
 
 modalitySummaryChart<-function(df) {
   
-   df %>% 
+   df %<>% 
     dplyr::filter(!is.na(modality)) %>%
     dplyr::group_by(modality,resultstatus) %>% 
     dplyr::summarise(value=sum(value)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(modality, desc(resultstatus)) %>% 
-    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive")))  %>% 
-    ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
+    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive"))) 
+    
+    df %>% ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
     geom_col() +
     scale_y_continuous(labels = scales::comma) +
     coord_flip() +
