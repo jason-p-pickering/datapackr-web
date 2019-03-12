@@ -1,5 +1,5 @@
 require(datapackr)
-options(shiny.maxRequestSize=30*1024^2)
+options(shiny.maxRequestSize=70*1024^2)
 options("baseurl" = "http://127.0.0.1:8080/")
 
 DHISLogin<-function(baseurl, username, password) {
