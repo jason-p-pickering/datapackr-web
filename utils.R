@@ -193,7 +193,8 @@ modalitySummaryChart<-function(df) {
     
   hts_mods %>% 
     ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
-    geom_col()
+    geom_col() +
+    scale_y_continuous(labels = scales::comma)
   
   
 }
