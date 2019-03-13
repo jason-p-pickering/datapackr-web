@@ -119,7 +119,7 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       
-      if (!inherits(d,"error") ) {
+      if (!inherits(d,"error") & !is.null(d)) {
         
         d <- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
@@ -181,7 +181,7 @@ shinyServer(function(input, output, session) {
     
     vr<-validation_results()
     
-    if (!inherits(vr,"error")){
+    if (!inherits(vr,"error")  & !is.null(vr)){
       
       vr %>%
         purrr::pluck(.,"datim") %>%
