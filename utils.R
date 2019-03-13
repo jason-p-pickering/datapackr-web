@@ -187,7 +187,7 @@ adornMERData<-function(df) {
 
 modalitySummaryChart<-function(df) {
   
-   df %<>% 
+   df %>% 
     dplyr::filter(!is.na(modality)) %>%
     dplyr::group_by(modality,resultstatus) %>% 
     dplyr::summarise(value=sum(value)) %>%
