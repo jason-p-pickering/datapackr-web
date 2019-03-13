@@ -196,7 +196,7 @@ adornMERData <- function(df) {
   }
   
 
-modalitySummaryChart < -function(df) {
+modalitySummaryChart <- function(df) {
 
    df %>% 
     dplyr::filter(!is.na(modality)) %>%
