@@ -84,24 +84,11 @@ validatePSNUData <- function(d) {
       round( ( eval( parse( text = x) ) - 1) * 100, 2 )
     })
   
-<<<<<<< HEAD
-<<<<<<< HEAD
-  d$datim$vr_rules_check  %<>% dplyr::filter(diff >= 5) %>%
-    dplyr::select(name,ou_name,mech_code,formula,diff) %>%
-    dplyr::mutate(name = gsub(pattern = "DSD,","",name)) 
-=======
-
-  d$datim$vr_rules_check <- vr_violations %>% dplyr::filter(diff >= 5) %>%
-    dplyr::select(name, ou_name, mech_code, formula, diff) %>%
-    dplyr::mutate(name = gsub(pattern = " DSD,", "", name)) 
->>>>>>> e94bca5... Code linting
-=======
 
   d$datim$vr_rules_check <- vr_violations %>% dplyr::filter(diff >= 5) %>%
     dplyr::select(name,ou_name,mech_code,formula,diff) %>%
     dplyr::mutate(name = gsub(pattern = " DSD,","",name)) 
->>>>>>> 02ce24f3febd7d0965c78a1a30b5fe19ce053b05
-  
+
  d
   
 }
