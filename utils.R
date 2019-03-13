@@ -92,11 +92,12 @@ validatePSNUData<-function(d) {
       round((eval(parse(text = x)) - 1) * 100 , 2)
     })
   
-  d$datim$vr_rules_check  %<>% dplyr::filter(diff >= 5) %>%
+
+  d$datim$vr_rules_check <- vr_violations %>% dplyr::filter(diff >= 5) %>%
     dplyr::select(name,ou_name,mech_code,formula,diff) %>%
-    dplyr::mutate(name = gsub(pattern = "DSD,","",name)) 
+    dplyr::mutate(name = gsub(pattern = " DSD,","",name)) 
   
-  d
+ d
   
 }
 
@@ -186,15 +187,14 @@ adornMERData<-function(df) {
 
 modalitySummaryChart<-function(df) {
   
-   df %<>% 
+   df %>% 
     dplyr::filter(!is.na(modality)) %>%
     dplyr::group_by(modality,resultstatus) %>% 
     dplyr::summarise(value=sum(value)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(modality, desc(resultstatus)) %>% 
-    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive"))) 
-    
-    df %>% ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
+    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive")))  %>% 
+    ggplot(aes(y=value,x=modality,fill=resultstatus)) + 
     geom_col() +
     scale_y_continuous(labels = scales::comma) +
     coord_flip() +
@@ -212,5 +212,6 @@ modalitySummaryChart<-function(df) {
           panel.grid.minor.x = element_line(color = "#595959"),
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank())
+  
   
 }
