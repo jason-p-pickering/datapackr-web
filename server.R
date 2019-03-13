@@ -106,7 +106,7 @@ shinyServer(function(input, output, session) {
     inFile <- input$file1
     messages<-""
     
-    if (is.null(inFile)) return(NULL)
+    if ( is.null( inFile ) ) return( NULL )
     
     messages<-list()
     
@@ -242,17 +242,15 @@ shinyServer(function(input, output, session) {
       
       messages <- validation_results() %>%
         purrr::pluck(., "info") %>%
-        purrr::pluck(., "warningMsg")      
+        purrr::pluck(., "warningMsg")
+      
+      if (!is.null(messages))  {
+        lapply(messages, function(x)
+          tags$li(x))
+      } else
+      {
+        tags$li("No Issues with Integrity Checks: Congratulations!")
+      }
     }
-    
-    if (!is.null(messages))  {
-      lapply(messages, function(x)
-        tags$li(x))
-    } else
-    {
-      NULL
-    }
-    
   })
-  
 })
