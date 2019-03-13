@@ -85,6 +85,7 @@ validatePSNUData <- function(d) {
     })
   
 <<<<<<< HEAD
+<<<<<<< HEAD
   d$datim$vr_rules_check  %<>% dplyr::filter(diff >= 5) %>%
     dplyr::select(name,ou_name,mech_code,formula,diff) %>%
     dplyr::mutate(name = gsub(pattern = "DSD,","",name)) 
@@ -94,8 +95,14 @@ validatePSNUData <- function(d) {
     dplyr::select(name, ou_name, mech_code, formula, diff) %>%
     dplyr::mutate(name = gsub(pattern = " DSD,", "", name)) 
 >>>>>>> e94bca5... Code linting
+=======
+
+  d$datim$vr_rules_check <- vr_violations %>% dplyr::filter(diff >= 5) %>%
+    dplyr::select(name,ou_name,mech_code,formula,diff) %>%
+    dplyr::mutate(name = gsub(pattern = " DSD,","",name)) 
+>>>>>>> 02ce24f3febd7d0965c78a1a30b5fe19ce053b05
   
-  d
+ d
   
 }
 
@@ -203,6 +210,7 @@ adornMERData <- function(df) {
   
 
 modalitySummaryChart < -function(df) {
+
    df %>% 
     dplyr::filter(!is.na(modality)) %>%
     dplyr::group_by(modality, resultstatus) %>%
