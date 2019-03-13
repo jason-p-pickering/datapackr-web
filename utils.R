@@ -56,9 +56,7 @@ validatePSNUData <- function(d) {
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
   rules_to_keep <- c(
-    "ZuX9Ck27Bb2",
     "L76D9NGEPRS",
-    "DztKZSt84yx",
     "rVVZmdG1KTb",
     "zEOFo6X436M",
     "oVtpQHVVeCV",
