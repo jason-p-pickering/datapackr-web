@@ -86,7 +86,7 @@ shinyServer(function(input, output, session) {
     
     wellPanel(fluidRow(
       img(src='pepfar.png', align = "center"),
-      h4("Welcome to the DataPack Validation tool. Please login with your DATIM credentials:")
+      h4("Welcome to the DataPack Validation App. Please login with your DATIM credentials:")
     ),
     fluidRow(
       textInput("user_name", "Username: ",width = "600px"),
