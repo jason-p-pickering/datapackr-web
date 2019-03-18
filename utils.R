@@ -153,24 +153,34 @@ adornMERData <- function(df) {
       )
     )
   
-  #create modalities
-  modality_map <- paste0(getOption("baseurl"),"api/dataElementGroupSets/Jm6OwL9IqEa?fields=dataElementGroups[name,dataElements[id]]") %>%
-    URLencode(.) %>%
-    httr::GET(.) %>%
-    httr::content(.,"text") %>%
-    jsonlite::fromJSON(.,flatten = TRUE) %>%
-    purrr::pluck(.,"dataElementGroups") %>% 
-    dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
-    tidyr::unnest() %>%
-    dplyr::distinct() %>%
-    dplyr::select(dataElement = dataElements,
-                  hts_modality = name ) %>%
-    dplyr::mutate(hts_modality = stringr::str_remove(hts_modality,"FY19R/FY20T"))
+  dimensionMap<-function(uid) {
+    
+    r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]") %>%
+      URLencode(.) %>%
+      httr::GET(.) %>%
+      httr::content(.,"text") %>%
+      jsonlite::fromJSON(.,flatten = TRUE) 
+    
+    make.names(r$name)
+    
+    dim_map<- r %>%
+      purrr::pluck(.,"dataElementGroups") %>% 
+      dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
+      tidyr::unnest() %>%
+      dplyr::distinct() %>%
+      dplyr::mutate(type=make.names(r$name))
+    return(dim_map)
+  }
+
+  data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL")
   
-   dplyr::left_join( df, modality_map, by = c("dataelementuid" = "dataElement")) %>%
+  degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
+  tidyr::spread(type,name,fill=NA) 
+  
+   dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElement")) %>%
      dplyr::select(-sheet_name, -dataelementuid, categoryoptioncombouid)
    
-  }
+}
   
 modalitySummaryChart <- function(df) {
 
