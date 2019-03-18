@@ -189,7 +189,7 @@ modalitySummaryChart <- function(df) {
     geom_col() +
     scale_y_continuous(labels = scales::comma) +
     coord_flip() +
-    scale_fill_manual(values = c("#548dc0", "#59BFB3")) +
+    scale_fill_manual(values = c(	"#948d79", "#548dc0", "#59BFB3")) +
     labs(y = "", x = "",
          title = "COP19/FY20 Testing Targets",
          subtitle = "modalities ordered by total tests") +
