@@ -153,7 +153,7 @@ adornMERData <- function(df) {
       )
     )
   
-  cached_degs <- "/srv/shiny-server/apps/datapack/degs_map.rds"
+  cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
   
   if ( file.access(cached_degs,4) == 0 ) {
     
@@ -180,11 +180,26 @@ adornMERData <- function(df) {
       return(dim_map)
     }
     
-    data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL")
+    data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL","Jm6OwL9IqEa")
     
     
   degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
   tidyr::spread(type,name,fill=NA) 
+  
+  from<-c("dataElements",
+          "Disaggregation.Type", 
+          "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
+          "Numerator...Denominator",
+          "Support.Type",
+          "Technical.Area")
+  to<-c("dataElements",
+        "disagg_type",
+        "hts_modality",
+        "numerator_denominator",
+        "support_type",
+        "technical_area")
+  names(degs_map)<-plyr::mapvalues(names(degs_map),from,to)
+  
   }
   
    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
