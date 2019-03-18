@@ -117,19 +117,8 @@ adornMechanisms <- function(d) {
 
 adornMERData <- function(df) {
   
-  suppressWarnings( df <- df  %>% tidyr::separate(
-                       indicatorCode,
-                       into = c(
-                         "indicator",
-                         "numeratordenom",
-                         "disaggregate",
-                         NA,
-                         "otherdisaggregate"
-                       ),
-                       sep = "\\.", 
-                       remove = FALSE )) 
-  
-   df %<>%   dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
+   df %<>%  
+     dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
                      dplyr::filter(dataset == "MER") %>%
                      dplyr::select(-sheet_name, -typeOptions, -dataset),
                    by = c("indicatorCode" = "indicatorCode",
@@ -203,7 +192,10 @@ adornMERData <- function(df) {
   }
   
    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
-     dplyr::select(-sheet_name, -dataelementuid, categoryoptioncombouid)
+     dplyr::select(-sheet_name,
+                   -dataelementuid, 
+                   -categoryoptioncombouid,
+                   -support_type)
    
 }
   
