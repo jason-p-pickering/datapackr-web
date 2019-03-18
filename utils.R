@@ -29,7 +29,6 @@ filterZeros <- function(d) {
   d
 }
 
-
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM
@@ -127,25 +126,21 @@ adornMERData <- function(df) {
       "otherdisaggregate"
     ),
     sep = "\\.", 
-    remove = FALSE )) 
-  
-  
-   df %<>% dplyr::select(-indicator,-numeratordenom,-disaggregate) %>% 
-     dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
-                     dplyr::filter(dataset == "MER") %>%
-                     dplyr::select(-sheet_name, -typeOptions, -dataset),
-                   by = c("indicatorCode" = "indicatorCode",
-                          "Age" = "validAges",
-                          "Sex" = "validSexes",
-                          "KeyPop" = "validKPs")) %>%
-  #result status
-   dplyr::mutate(
+    remove = FALSE ) %>%    dplyr::mutate(
       resultstatus = dplyr::case_when(
         otherdisaggregate %in% c("NewPos", "KnownPos", "Positive") ~ "Positive",
         otherdisaggregate %in% c("NewNeg", "Negative")             ~ "Negative",
         otherdisaggregate == "Unknown"                             ~ "Unknown"
       )
-    )
+    ))
+  
+   df %<>%  dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
+                     dplyr::filter(dataset == "MER") %>%
+                     dplyr::select(-sheet_name, -typeOptions, -dataset),
+                   by = c("indicatorCode" = "indicatorCode",
+                          "Age" = "validAges",
+                          "Sex" = "validSexes",
+                          "KeyPop" = "validKPs"))
   
   cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
   
@@ -197,10 +192,8 @@ adornMERData <- function(df) {
   }
   
    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
-     dplyr::select(-sheet_name,
-                   -dataelementuid, 
-                   -categoryoptioncombouid,
-                   -support_type)
+     dplyr::mutate(operating_unit=d$info$datapack_name,
+                   hts_modality=stringr::str_replace(hts_modality,"FY19R/FY20T",""))
    
 }
   

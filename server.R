@@ -149,9 +149,9 @@ shinyServer(function(input, output, session) {
       vr  %>% 
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"distributedMER") %>%
-        group_by(indicator,agency, numeratordenom,disaggregate) %>% 
-        summarise(value = format( sum(value) ,big.mark=',', scientific=FALSE)) %>%
-        arrange(indicator,numeratordenom,disaggregate,agency) 
+        dplyr::group_by(indicator,agency, numerator_denominator,disagg_type) %>% 
+        dplyr::summarise(value = format( sum(value) ,big.mark=',', scientific=FALSE)) %>%
+        dplyr::arrange(indicator,agency, numerator_denominator,disagg_type) 
       
     } else {
       NULL
@@ -205,6 +205,33 @@ shinyServer(function(input, output, session) {
       
       download_data <- validation_results() %>% 
         purrr::pluck(.,"data")
+      
+      merColumnsToKeep<-function(x) {
+  
+        columns_to_keep<-c(
+          "operating_unit",
+          "PSNU",
+          "technical_area",
+          "indicatorCode", 
+          "disagg_type",
+          "Age",
+          "Sex",
+          "KeyPop",
+          "resultstatus",
+          "numerator_denominator",
+          "hts_modality",
+          "mechanismCode",
+          "partner",
+          "agency",
+          "value"
+        )
+        
+        columns_existing <-which(columns_to_keep %in% names(x))
+        columns_to_keep[columns_existing]
+      }
+      
+      download_data$MER %<>% dplyr::select(.,merColumnsToKeep(.))
+      download_data$distributedMER %<>%  dplyr::select(.,merColumnsToKeep(.))
       
       vr_rules<-validation_results() %>% 
         purrr::pluck(.,"datim") %>%
