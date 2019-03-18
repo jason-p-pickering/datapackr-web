@@ -167,7 +167,8 @@ adornMERData <- function(df) {
                   hts_modality = name ) %>%
     dplyr::mutate(hts_modality = stringr::str_remove(hts_modality,"FY19R/FY20T"))
   
-   dplyr::left_join( df, modality_map, by = c("dataelementuid" = "dataElement"))
+   dplyr::left_join( df, modality_map, by = c("dataelementuid" = "dataElement")) %>%
+     dplyr::select(-sheet_name, -dataelementuid, categoryoptioncombouid)
    
   }
   
