@@ -177,14 +177,15 @@ adornMERData <- function(df) {
   
   cached_degs <- "/srv/shiny-server/apps/datapack/degs_map.rds"
   
-  if (file.access(cached_degs,4) == -1) {
+  if ( file.access(cached_degs,4) == 0 ) {
     
-    mechs <-readRDS(cached_degs)
+    degs_map <-readRDS(cached_degs)
     
   } else {
     
   degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
-  tidyr::spread(type,name,fill=NA) }
+  tidyr::spread(type,name,fill=NA) 
+  }
   
    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
      dplyr::select(-sheet_name, -dataelementuid, categoryoptioncombouid)
