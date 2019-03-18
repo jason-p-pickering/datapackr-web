@@ -177,7 +177,7 @@ adornMERData <- function(df) {
   degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
   tidyr::spread(type,name,fill=NA) 
   
-   dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElement")) %>%
+   dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
      dplyr::select(-sheet_name, -dataelementuid, categoryoptioncombouid)
    
 }
