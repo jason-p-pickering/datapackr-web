@@ -91,7 +91,6 @@ validatePSNUData <- function(d) {
   
 }
 
-
 adornMechanisms <- function(d) {
   
   cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
@@ -172,7 +171,6 @@ adornMERData <- function(df) {
    
   }
   
-
 modalitySummaryChart <- function(df) {
 
    df %>% 
@@ -181,7 +179,7 @@ modalitySummaryChart <- function(df) {
     dplyr::summarise(value = sum(value)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(hts_modality, desc(resultstatus)) %>% 
-    dplyr::mutate(resultstatus = factor(resultstatus, c("Negative", "Positive"))) %>%
+    dplyr::mutate(resultstatus = factor(resultstatus, c("Unknown","Negative", "Positive"))) %>%
     ggplot(aes(
       y = value,
       x = reorder(hts_modality, value, sum),
