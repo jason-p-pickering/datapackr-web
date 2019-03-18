@@ -175,11 +175,11 @@ adornMERData <- function(df) {
   data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL")
   
   
-  degs_map <- "/srv/shiny-server/apps/datapack/degs_map.rds"
+  cached_degs <- "/srv/shiny-server/apps/datapack/degs_map.rds"
   
   if (file.access(cached_degs,4) == -1) {
     
-    mechs <-readRDS(cached_mechs)
+    mechs <-readRDS(cached_degs)
     
   } else {
     
