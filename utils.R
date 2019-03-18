@@ -95,7 +95,7 @@ adornMechanisms <- function(d) {
   
   cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
   
-  if (file.access(cached_mechs,4)) {
+  if ( file.access(cached_mechs,4) == 0 ) {
     
     mechs <-readRDS(cached_mechs)
 
@@ -174,8 +174,17 @@ adornMERData <- function(df) {
 
   data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL")
   
+  
+  degs_map <- "/srv/shiny-server/apps/datapack/degs_map.rds"
+  
+  if (file.access(cached_degs,4) == -1) {
+    
+    mechs <-readRDS(cached_mechs)
+    
+  } else {
+    
   degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
-  tidyr::spread(type,name,fill=NA) 
+  tidyr::spread(type,name,fill=NA) }
   
    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
      dplyr::select(-sheet_name, -dataelementuid, categoryoptioncombouid)
