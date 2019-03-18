@@ -153,28 +153,6 @@ adornMERData <- function(df) {
       )
     )
   
-  dimensionMap<-function(uid) {
-    
-    r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]") %>%
-      URLencode(.) %>%
-      httr::GET(.) %>%
-      httr::content(.,"text") %>%
-      jsonlite::fromJSON(.,flatten = TRUE) 
-    
-    make.names(r$name)
-    
-    dim_map<- r %>%
-      purrr::pluck(.,"dataElementGroups") %>% 
-      dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
-      tidyr::unnest() %>%
-      dplyr::distinct() %>%
-      dplyr::mutate(type=make.names(r$name))
-    return(dim_map)
-  }
-
-  data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL")
-  
-  
   cached_degs <- "/srv/shiny-server/apps/datapack/degs_map.rds"
   
   if ( file.access(cached_degs,4) == 0 ) {
@@ -182,6 +160,28 @@ adornMERData <- function(df) {
     degs_map <-readRDS(cached_degs)
     
   } else {
+    
+    dimensionMap<-function(uid) {
+      
+      r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]") %>%
+        URLencode(.) %>%
+        httr::GET(.) %>%
+        httr::content(.,"text") %>%
+        jsonlite::fromJSON(.,flatten = TRUE) 
+      
+      make.names(r$name)
+      
+      dim_map<- r %>%
+        purrr::pluck(.,"dataElementGroups") %>% 
+        dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
+        tidyr::unnest() %>%
+        dplyr::distinct() %>%
+        dplyr::mutate(type=make.names(r$name))
+      return(dim_map)
+    }
+    
+    data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL")
+    
     
   degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
   tidyr::spread(type,name,fill=NA) 
