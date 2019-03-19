@@ -156,7 +156,7 @@ adornMERData <- function(df) {
         URLencode(.) %>%
         httr::GET(.) %>%
         httr::content(.,"text") %>%
-        jsonlite::fromJSON(.,flatten = TRUE) 
+        jsonlite::fromJSON(.,flatten = TRUE) }
       
       make.names(r$name)
       
@@ -188,8 +188,6 @@ adornMERData <- function(df) {
         "support_type",
         "technical_area")
   names(degs_map)<-plyr::mapvalues(names(degs_map),from,to)
-  
-  }
   
    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
      dplyr::mutate(operating_unit=d$info$datapack_name,
