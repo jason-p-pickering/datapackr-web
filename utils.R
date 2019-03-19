@@ -75,11 +75,13 @@ validatePSNUData <- function(d) {
   
   if ( NROW(vr_violations) > 0 ) {
     
-  vr_violations<-vr_violations[ vr_violations$id %in% rules_to_keep, ]
+    vr_violations <-
+      vr_violations[vr_violations$id %in% rules_to_keep,] } else {
+        d$datim$vr_rules_check <- NULL
+        return(d)
+    }
   
-  if (NROW(vr_violations) > 0 ) {
   diff <- gsub(" <= ", "/", vr_violations$formula)
-  
   vr_violations$diff <-
     sapply( diff, function(x) {
       round( ( eval( parse( text = x) ) - 1) * 100, 2 )
@@ -92,15 +94,11 @@ validatePSNUData <- function(d) {
       dplyr::select(name,ou_name,mech_code,formula,diff) %>%
       dplyr::mutate(name = gsub(pattern = " DSD,","",name))     
   } else {
-    d$datim$vr_rules_check <- NULL 
-  }
-  } else {
     d$datim$vr_rules_check <- NULL
-  } else {
-    d$datim$vr_rules_check <- NULL
+    return(d)
   }
-
- d
+ 
+  d
   
 }
 
