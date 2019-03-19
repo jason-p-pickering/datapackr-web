@@ -154,7 +154,7 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"distributedMER") %>%
         dplyr::group_by(indicator,agency, numerator_denominator,disagg_type) %>% 
-        dplyr::summarise(value = format( sum(value) ,big.mark=',', scientific=FALSE)) %>%
+        dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
         dplyr::arrange(indicator,agency, numerator_denominator,disagg_type) 
       
     } else {
