@@ -212,6 +212,7 @@ shinyServer(function(input, output, session) {
       merColumnsToKeep<-function(x) {
   
         columns_to_keep<-c(
+          "psnuid",
           "operating_unit",
           "PSNU",
           "technical_area",
