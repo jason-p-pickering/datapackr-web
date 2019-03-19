@@ -152,18 +152,17 @@ adornMERData <- function(df) {
       )
     ))
   
-   df <- df %>%  dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
+   df %<>% dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
                      dplyr::filter(dataset == "MER") %>%
                      dplyr::select(-sheet_name, -typeOptions, -dataset),
                    by = c("indicatorCode" = "indicatorCode",
                           "Age" = "validAges",
                           "Sex" = "validSexes",
                           "KeyPop" = "validKPs"))
-   
+ 
+   #Data element group set dimension adornment  
   cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
-  
-  
-  if ( file.access(cached_degs,4) == 0 ) {
+   if ( file.access(cached_degs,4) == 0 ) {
     degs_map <-readRDS(cached_degs)
   } else {
     
@@ -174,7 +173,7 @@ adornMERData <- function(df) {
         "TWXpUVE2MqL",
         "Jm6OwL9IqEa")
   
-      degs_map <- purrr::map_dfr(data_element_dims,dimensionMap) %>% 
+      degs_map <- purrr::map_dfr(data_element_dims,getDEGSMap) %>% 
       tidyr::spread(type,name,fill=NA) 
       #Remapping of column names
       from<-c("dataElements",
@@ -194,8 +193,11 @@ adornMERData <- function(df) {
       names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
   
+  print("Joining DEGS map")
+  print(names(df))
+  
   df %>% 
-    dplyr::left_join(  degs_map, by = c("dataelementuid" = "dataElements")) %>%
+    dplyr::left_join(., degs_map, by = c("dataelementuid" = "dataElements")) %>%
     dplyr::mutate(operating_unit=d$info$datapack_name,
                   hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
 

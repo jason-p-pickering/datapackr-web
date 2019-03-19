@@ -174,7 +174,6 @@ shinyServer(function(input, output, session) {
     
   },height = 400,width = 600)
   
-  
   output$vr_rules <- renderDataTable({ 
     
     vr<-validation_results()
