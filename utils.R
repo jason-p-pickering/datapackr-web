@@ -126,7 +126,6 @@ getDEGSMap <- function(uid) {
     dplyr::distinct() %>%
     dplyr::mutate(type=make.names(r$name))
 
-  
 }
 
 #Used with permission from @achafetz  
@@ -144,7 +143,8 @@ adornMERData <- function(df) {
       "otherdisaggregate"
     ),
     sep = "\\.", 
-    remove = FALSE ) %>%    dplyr::mutate(
+    remove = FALSE ) %>%  
+      dplyr::mutate(
       resultstatus = dplyr::case_when(
         otherdisaggregate %in% c("NewPos", "KnownPos", "Positive") ~ "Positive",
         otherdisaggregate %in% c("NewNeg", "Negative")             ~ "Negative",
@@ -197,8 +197,8 @@ adornMERData <- function(df) {
   print(names(df))
   
   df %>% 
-    dplyr::left_join(., degs_map, by = c("dataelementuid" = "dataElements")) %>%
-    dplyr::mutate(operating_unit=d$info$datapack_name,
+    dplyr::left_join( degs_map, by = c("dataelementuid" = "dataElements")) %>%
+    dplyr::mutate(operating_unit=df$info$datapack_name,
                   hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
 
 
