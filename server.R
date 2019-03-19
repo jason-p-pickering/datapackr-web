@@ -14,6 +14,7 @@ shinyServer(function(input, output, session) {
   ready <- reactiveValues(ok = FALSE)
   
   observeEvent(input$file1, {
+    shinyjs::disable("file1")
     shinyjs::enable("validate")
     ready$ok <- FALSE
   }) 
