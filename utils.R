@@ -32,18 +32,25 @@ filterZeros <- function(d) {
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM
+  
   names(vr_data) <- c("dataElement",
                       "period",
                       "orgUnit",
                       "categoryOptionCombo",
                       "attributeOptionCombo",
                       "value")
+  
+  #We cannot remap mechanism to UID here, since not all of the
+  #mechanisms are in DATIM!!!!
+  
   vr_data$attributeOptionCombo <-
     datimvalidation::remapMechs(vr_data$attributeOptionCombo,
                                 getOption("organisationUnit"),
                                 "code",
                                 "id")
+  
   datasets_uid <- c("nIHNMxuPUOR", "sBv1dj90IX6")
+  
   if ( Sys.info()["sysname"] == "Linux") {
     ncores <- parallel::detectCores() - 1
     doMC::registerDoMC( cores = ncores )
@@ -82,11 +89,18 @@ validatePSNUData <- function(d) {
     })
   
 
-  d$datim$vr_rules_check <- vr_violations %>% dplyr::filter(diff >= 5) %>%
+  vr_violations %<>% dplyr::filter(diff >= 5) 
+  if ( NROW(vr_violations) > 0 ) {
+
+    d$datim$vr_rules_check <- vr_violations %>%  
     dplyr::select(name,ou_name,mech_code,formula,diff) %>%
     dplyr::mutate(name = gsub(pattern = " DSD,","",name)) 
-
- d
+  
+      } else {
+        d$datim$vr_rules_check <- NULL
+  }
+ 
+d
   
 }
 
