@@ -198,8 +198,7 @@ adornMERData <- function(df) {
   
   df %>% 
     dplyr::left_join( degs_map, by = c("dataelementuid" = "dataElements")) %>%
-    dplyr::mutate(operating_unit=df$info$datapack_name,
-                  hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
+    dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
 
 
 }
