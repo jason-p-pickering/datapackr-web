@@ -54,6 +54,7 @@ validatePSNUData <- function(d) {
   vr_violations <- datimvalidation::validateData(vr_data,
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
+
   rules_to_keep <- c(
     "L76D9NGEPRS",
     "rVVZmdG1KTb",
@@ -72,8 +73,11 @@ validatePSNUData <- function(d) {
     "SNzoIyNuanF"
   )
   
+  if ( NROW(vr_violations) > 0 ) {
+    
   vr_violations<-vr_violations[ vr_violations$id %in% rules_to_keep, ]
   
+  if (NROW(vr_violations) > 0 ) {
   diff <- gsub(" <= ", "/", vr_violations$formula)
   
   vr_violations$diff <-
@@ -81,15 +85,19 @@ validatePSNUData <- function(d) {
       round( ( eval( parse( text = x) ) - 1) * 100, 2 )
     })
   
-
   vr_violations %<>% dplyr::filter(diff >= 5) 
    
-  if (NROW(vr_violations) > 0 ) {
+  if ( NROW(vr_violations) > 0 ) {
     d$datim$vr_rules_check <- vr_violations  %>%
       dplyr::select(name,ou_name,mech_code,formula,diff) %>%
       dplyr::mutate(name = gsub(pattern = " DSD,","",name))     
   } else {
     d$datim$vr_rules_check <- NULL 
+  }
+  } else {
+    d$datim$vr_rules_check <- NULL
+  } else {
+    d$datim$vr_rules_check <- NULL
   }
 
  d
