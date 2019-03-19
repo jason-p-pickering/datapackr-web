@@ -112,7 +112,7 @@ shinyServer(function(input, output, session) {
     
     withProgress(message = 'Validating file', value = 0,{
       
-      shinyjs::disable(input$file1)
+      shinyjs::disable("file1")
       incProgress(0.1, detail = ("Validating your DataPack"))
       d<-tryCatch({
         datapackr::unPackData(inFile$datapath)},
