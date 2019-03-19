@@ -162,6 +162,7 @@ adornMERData <- function(df) {
    
   cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
   
+  
   if ( file.access(cached_degs,4) == 0 ) {
     degs_map <-readRDS(cached_degs)
   } else {
@@ -175,32 +176,29 @@ adornMERData <- function(df) {
   
       degs_map <- purrr::map_dfr(data_element_dims,dimensionMap) %>% 
       tidyr::spread(type,name,fill=NA) 
+      #Remapping of column names
+      from<-c("dataElements",
+              "Disaggregation.Type", 
+              "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
+              "Numerator...Denominator",
+              "Support.Type",
+              "Technical.Area")
+      
+      to<-c("dataElements",
+            "disagg_type",
+            "hts_modality",
+            "numerator_denominator",
+            "support_type",
+            "technical_area")
+      
+      names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
   
-  #Remapping of column names
-  from<-c("dataElements",
-          "Disaggregation.Type", 
-          "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
-          "Numerator...Denominator",
-          "Support.Type",
-          "Technical.Area")
-  
-  to<-c("dataElements",
-        "disagg_type",
-        "hts_modality",
-        "numerator_denominator",
-        "support_type",
-        "technical_area")
-  
-  names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
-  
-  df <- df %>% 
-    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
+  df %>% 
+    dplyr::left_join(  degs_map, by = c("dataelementuid" = "dataElements")) %>%
     dplyr::mutate(operating_unit=d$info$datapack_name,
                   hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
-  
-  warning(names(df))
-  return(df) 
+
 
 }
   
