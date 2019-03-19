@@ -38,11 +38,12 @@ validatePSNUData <- function(d) {
                       "categoryOptionCombo",
                       "attributeOptionCombo",
                       "value")
-  vr_data$attributeOptionCombo <-
-    datimvalidation::remapMechs(vr_data$attributeOptionCombo,
-                                getOption("organisationUnit"),
-                                "code",
-                                "id")
+  # We need ALL mechanisms to be in DATIM before remapping....TODO
+  # vr_data$attributeOptionCombo <-
+  #   datimvalidation::remapMechs(vr_data$attributeOptionCombo,
+  #                               getOption("organisationUnit"),
+  #                               "code",
+  #                               "id")
   datasets_uid <- c("nIHNMxuPUOR", "sBv1dj90IX6")
   if ( Sys.info()["sysname"] == "Linux") {
     ncores <- parallel::detectCores() - 1
