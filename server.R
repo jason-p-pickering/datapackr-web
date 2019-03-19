@@ -127,9 +127,11 @@ shinyServer(function(input, output, session) {
         incProgress(0.1, detail = ("Making mechanisms prettier"))
         d$data$distributedMER %<>% adornMechanisms()
         d$data$SNUxIM %<>% adornMechanisms()
+        Sys.sleep(0.5)
         incProgress(0.1, detail = ("Running dimensional transformation"))
         d$data$MER %<>% adornMERData()
         d$data$distributedMER  %<>%  adornMERData()
+        Sys.sleep(0.5)
         
         shinyjs::show("downloadData")
         shinyjs::show("downloadFlatPack")
@@ -237,9 +239,6 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"vr_rules_check")
       
       download_data$validation_rules <- vr_rules
-      download_data$validation_rules_foo <- vr_rules
-      
-      
       openxlsx::write.xlsx(download_data, file = file)
       
     })

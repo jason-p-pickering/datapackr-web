@@ -193,9 +193,6 @@ adornMERData <- function(df) {
       names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
   
-  print("Joining DEGS map")
-  print(names(df))
-  
   df %>% 
     dplyr::left_join( degs_map, by = c("dataelementuid" = "dataElements")) %>%
     dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
