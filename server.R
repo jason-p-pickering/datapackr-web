@@ -238,6 +238,8 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"vr_rules_check")
       
       download_data$validation_rules <- vr_rules
+      download_data$validation_rules_foo <- vr_rules
+      
       
       openxlsx::write.xlsx(download_data, file = file)
       

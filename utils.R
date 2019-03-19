@@ -111,6 +111,24 @@ adornMechanisms <- function(d) {
 
 }
 
+getDEGSMap <- function(uid) {
+  
+    r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]") %>%
+      URLencode(.) %>%
+      httr::GET(.) %>%
+      httr::content(.,"text") %>%
+      jsonlite::fromJSON(.,flatten = TRUE) 
+  
+   r %>%
+    purrr::pluck(.,"dataElementGroups") %>% 
+    dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
+    tidyr::unnest() %>%
+    dplyr::distinct() %>%
+    dplyr::mutate(type=make.names(r$name))
+
+  
+}
+
 #Used with permission from @achafetz  
 #https://github.com/USAID-OHA-SI/tameDP/blob/master/R/clean_indicators.R
 
@@ -134,65 +152,56 @@ adornMERData <- function(df) {
       )
     ))
   
-   df %<>%  dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
+   df <- df %>%  dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
                      dplyr::filter(dataset == "MER") %>%
                      dplyr::select(-sheet_name, -typeOptions, -dataset),
                    by = c("indicatorCode" = "indicatorCode",
                           "Age" = "validAges",
                           "Sex" = "validSexes",
                           "KeyPop" = "validKPs"))
-  
+   
   cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
   
   if ( file.access(cached_degs,4) == 0 ) {
-    
     degs_map <-readRDS(cached_degs)
-    
   } else {
     
-    dimensionMap<-function(uid) {
-      
-      r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]") %>%
-        URLencode(.) %>%
-        httr::GET(.) %>%
-        httr::content(.,"text") %>%
-        jsonlite::fromJSON(.,flatten = TRUE) }
-      
-      make.names(r$name)
-      
-      dim_map<- r %>%
-        purrr::pluck(.,"dataElementGroups") %>% 
-        dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
-        tidyr::unnest() %>%
-        dplyr::distinct() %>%
-        dplyr::mutate(type=make.names(r$name))
-      return(dim_map)
-    }
-    
-    data_element_dims<-c("HWPJnUTMjEq","lD2x0c8kywj","LxhLO68FcXm","TWXpUVE2MqL","Jm6OwL9IqEa")
-    
-    
-  degs_map<-purrr::map_dfr(data_element_dims,dimensionMap) %>% 
-  tidyr::spread(type,name,fill=NA) 
+    data_element_dims <-
+      c("HWPJnUTMjEq",
+        "lD2x0c8kywj",
+        "LxhLO68FcXm",
+        "TWXpUVE2MqL",
+        "Jm6OwL9IqEa")
   
+      degs_map <- purrr::map_dfr(data_element_dims,dimensionMap) %>% 
+      tidyr::spread(type,name,fill=NA) 
+  }
+  
+  #Remapping of column names
   from<-c("dataElements",
           "Disaggregation.Type", 
           "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
           "Numerator...Denominator",
           "Support.Type",
           "Technical.Area")
+  
   to<-c("dataElements",
         "disagg_type",
         "hts_modality",
         "numerator_denominator",
         "support_type",
         "technical_area")
-  names(degs_map)<-plyr::mapvalues(names(degs_map),from,to)
   
-   dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
-     dplyr::mutate(operating_unit=d$info$datapack_name,
-                   hts_modality=stringr::str_replace(hts_modality,"FY19R/FY20T",""))
-   
+  names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
+  
+  df <- df %>% 
+    dplyr::left_join( df, degs_map, by = c("dataelementuid" = "dataElements")) %>%
+    dplyr::mutate(operating_unit=d$info$datapack_name,
+                  hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
+  
+  warning(names(df))
+  return(df) 
+
 }
   
 modalitySummaryChart <- function(df) {
