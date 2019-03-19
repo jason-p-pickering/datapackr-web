@@ -19,6 +19,7 @@ shinyServer(function(input, output, session) {
   }) 
   
   observeEvent(input$validate, {
+    shinyjs::disable("file1")
     shinyjs::disable("validate")
     ready$ok <- TRUE
   })  
@@ -112,6 +113,7 @@ shinyServer(function(input, output, session) {
     
     withProgress(message = 'Validating file', value = 0,{
       
+      shinyjs::disable("file1")
       incProgress(0.1, detail = ("Validating your DataPack"))
       d<-tryCatch({
         datapackr::unPackData(inFile$datapath)},
@@ -152,7 +154,7 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"distributedMER") %>%
         dplyr::group_by(indicator,agency, numerator_denominator,disagg_type) %>% 
-        dplyr::summarise(value = format( sum(value) ,big.mark=',', scientific=FALSE)) %>%
+        dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
         dplyr::arrange(indicator,agency, numerator_denominator,disagg_type) 
       
     } else {
