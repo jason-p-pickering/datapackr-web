@@ -222,6 +222,7 @@ shinyServer(function(input, output, session) {
           "Sex",
           "KeyPop",
           "resultstatus",
+          "resultstatus_inclusive",
           "numerator_denominator",
           "hts_modality",
           "mechanismCode",

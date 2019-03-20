@@ -124,9 +124,49 @@ adornMechanisms <- function(d) {
 
 }
 
+getCOGSMap<-function(uid) {
+  
+  r<-paste0(getOption("baseurl"),"api/categoryOptionGroupSets/",uid,
+  "?fields=id,name,categoryOptionGroups[id,name,categoryOptions[id,name,categoryOptionCombos[id,name]]") %>%
+  URLencode(.) %>%
+    httr::GET(.) %>%
+    httr::content(.,"text") %>%
+    jsonlite::fromJSON(.,flatten = TRUE) 
+  
+ dim_name<- r$name
+ dim_id<- r$id
+ 
+ cogs <- r %>% purrr::pluck(.,"categoryOptionGroups") %>% dplyr::select(id,name)
+ 
+ cogs_cocs_map<-list()
+ 
+ for (i in 1:NROW(cogs) ) {
+   
+   cos_cocs <- r %>%
+     purrr::pluck(.,"categoryOptionGroups") %>% 
+     purrr::pluck(.,"categoryOptions") %>%
+     purrr::pluck(., i) %>% 
+     purrr::pluck(.,"categoryOptionCombos") %>%
+     do.call(rbind.data.frame,.) %>%
+     dplyr::distinct() %>%
+     dplyr::select("category_option_combo"=name,"coc_uid"=id)
+   
+   cos_cocs$category_option_group_name<-cogs[i,"name"]
+   cos_cocs$category_option_group_uid<-cogs[i,"id"]
+   cogs_cocs_map<-rlist::list.append(cogs_cocs_map,cos_cocs)
+ }
+ 
+ cogs_cocs_map %<>% do.call(rbind.data.frame,.)
+ 
+ return(list(dimension_name=r$name,
+             dimension_id=r$id,
+             dimension_map= cogs_cocs_map))
+
+}
+
 getDEGSMap <- function(uid) {
   
-    r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]") %>%
+    r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]&paging=false") %>%
       URLencode(.) %>%
       httr::GET(.) %>%
       httr::content(.,"text") %>%
@@ -146,24 +186,25 @@ getDEGSMap <- function(uid) {
 
 adornMERData <- function(df) {
   
-  suppressWarnings( df <- df  %>% tidyr::separate(
-    indicatorCode,
-    into = c(
-      "indicator",
-      "numeratordenom",
-      "disaggregate",
-      NA,
-      "otherdisaggregate"
-    ),
-    sep = "\\.", 
-    remove = FALSE ) %>%  
-      dplyr::mutate(
-      resultstatus = dplyr::case_when(
-        otherdisaggregate %in% c("NewPos", "KnownPos", "Positive") ~ "Positive",
-        otherdisaggregate %in% c("NewNeg", "Negative")             ~ "Negative",
-        otherdisaggregate == "Unknown"                             ~ "Unknown"
-      )
-    ))
+  
+  hiv_specifc<-getCOGSMap("bDWsPYyXgWP") %>%
+    purrr::pluck("dimension_map") %>%
+    dplyr::select("categoryoptioncombouid"=coc_uid,
+                  "resultstatus"=category_option_group_name) %>%
+    dplyr::mutate(resultstatus = stringr::str_replace(resultstatus,"\\(Specific\\)","")) %>%
+    dplyr::mutate(resultstatus = stringr::str_replace(resultstatus,"HIV","")) %>%
+    dplyr::mutate(resultstatus = stringr::str_trim(resultstatus))
+    
+  
+  hiv_inclusive<-getCOGSMap("ipBFu42t2sJ") %>%
+  purrr::pluck("dimension_map") %>%
+    dplyr::select("categoryoptioncombouid"=coc_uid,
+                  "resultstatus_inclusive"=category_option_group_name) %>%
+  dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"\\(Inclusive\\)","")) %>%
+    dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"HIV","")) %>%
+    dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
+    dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
+
   
    df %<>% dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
                      dplyr::filter(dataset == "MER") %>%
@@ -173,8 +214,12 @@ adornMERData <- function(df) {
                           "Sex" = "validSexes",
                           "KeyPop" = "validKPs"))
  
+   df  %<>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
+     dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
+   
    #Data element group set dimension adornment  
   cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
+  
    if ( file.access(cached_degs,4) == 0 ) {
     degs_map <-readRDS(cached_degs)
   } else {
