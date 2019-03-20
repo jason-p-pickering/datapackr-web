@@ -153,9 +153,9 @@ shinyServer(function(input, output, session) {
       vr  %>% 
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"distributedMER") %>%
-        dplyr::group_by(indicator,agency, numerator_denominator,disagg_type) %>% 
+        dplyr::group_by(technical_area,disagg_type,agency, numerator_denominator) %>% 
         dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
-        dplyr::arrange(indicator,agency, numerator_denominator,disagg_type) 
+        dplyr::arrange(technical_area,disagg_type,agency, numerator_denominator) 
       
     } else {
       NULL
@@ -213,7 +213,6 @@ shinyServer(function(input, output, session) {
   
         columns_to_keep<-c(
           "psnuid",
-          "operating_unit",
           "PSNU",
           "technical_area",
           "indicatorCode", 
