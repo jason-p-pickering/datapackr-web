@@ -205,7 +205,6 @@ adornMERData <- function(df) {
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
 
-  
    df %<>% dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
                      dplyr::filter(dataset == "MER") %>%
                      dplyr::select(-sheet_name, -typeOptions, -dataset),
@@ -214,7 +213,8 @@ adornMERData <- function(df) {
                           "Sex" = "validSexes",
                           "KeyPop" = "validKPs"))
  
-   df  %<>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
+   #Join category option group sets
+   df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
      dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
    
    #Data element group set dimension adornment  
@@ -262,15 +262,15 @@ modalitySummaryChart <- function(df) {
 
    df %>% 
     dplyr::filter(!is.na(hts_modality)) %>%
-    dplyr::group_by(hts_modality, resultstatus) %>%
+    dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
     dplyr::summarise(value = sum(value)) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(hts_modality, desc(resultstatus)) %>% 
-    dplyr::mutate(resultstatus = factor(resultstatus, c("Unknown","Negative", "Positive"))) %>%
+    dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
+    dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>%
     ggplot(aes(
       y = value,
       x = reorder(hts_modality, value, sum),
-      fill = resultstatus
+      fill = resultstatus_inclusive
     )) +
     geom_col() +
     scale_y_continuous(labels = scales::comma) +
