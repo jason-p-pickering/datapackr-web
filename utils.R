@@ -187,7 +187,7 @@ getDEGSMap <- function(uid) {
 adornMERData <- function(df) {
   
   
-  hiv_specifc<-getCOGSMap("bDWsPYyXgWP") %>%
+  hiv_specific<-getCOGSMap("bDWsPYyXgWP") %>%
     purrr::pluck("dimension_map") %>%
     dplyr::select("categoryoptioncombouid"=coc_uid,
                   "resultstatus"=category_option_group_name) %>%
