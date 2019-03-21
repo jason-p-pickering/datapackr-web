@@ -32,12 +32,15 @@ filterZeros <- function(d) {
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM
+  
   names(vr_data) <- c("dataElement",
                       "period",
                       "orgUnit",
                       "categoryOptionCombo",
                       "attributeOptionCombo",
                       "value")
+  
+  
   # We need ALL mechanisms to be in DATIM before remapping....TODO
   # vr_data$attributeOptionCombo <-
   #   datimvalidation::remapMechs(vr_data$attributeOptionCombo,
@@ -211,7 +214,8 @@ adornMERData <- function(df) {
                    by = c("indicatorCode" = "indicatorCode",
                           "Age" = "validAges",
                           "Sex" = "validSexes",
-                          "KeyPop" = "validKPs"))
+                          "KeyPop" = "validKPs")) %>%
+     dplyr::filter(!is.na(dataelementuid) & !is.na(categoryoptioncombouid))
  
    #Join category option group sets
    df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
