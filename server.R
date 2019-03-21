@@ -126,6 +126,8 @@ shinyServer(function(input, output, session) {
         d <- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
         d <- validatePSNUData(d)
+        incProgress(0.1,detail="Validating mechanisms")
+        d <- validateMechanisms(d)
         incProgress(0.1, detail = ("Making mechanisms prettier"))
         d$data$distributedMER %<>% adornMechanisms()
         d$data$SNUxIM %<>% adornMechanisms()
