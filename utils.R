@@ -32,12 +32,15 @@ filterZeros <- function(d) {
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM
+  
   names(vr_data) <- c("dataElement",
                       "period",
                       "orgUnit",
                       "categoryOptionCombo",
                       "attributeOptionCombo",
                       "value")
+  
+  
   # We need ALL mechanisms to be in DATIM before remapping....TODO
   # vr_data$attributeOptionCombo <-
   #   datimvalidation::remapMechs(vr_data$attributeOptionCombo,
@@ -103,23 +106,59 @@ validatePSNUData <- function(d) {
   
 }
 
-adornMechanisms <- function(d) {
+#TODO: Move this back to the DataPackr....
+validateMechanisms<-function(d) {
   
+  vr_data <- d$datim$PSNUxIM %>%
+    dplyr::pull(mechanismCode) %>%
+    unique()
+  
+  #TODO: Removve hard coding of time periods and 
+  #filter for the OU as well
+  mechs<-getMechanismView() %>%
+    dplyr::filter(!is.na(startdate)) %>%
+    dplyr::filter(!is.na(enddate)) %>%
+    dplyr::filter(startdate <= as.Date('2019-10-01')) %>%
+    dplyr::filter(enddate >= as.Date('2020-09-30')) %>%
+    dplyr::pull(mechanismCode)
+  
+  bad_mechs<-vr_data[!(vr_data %in% mechs)]
+  
+  if (length(bad_mechs) > 0 ) {
+    
+    msg <- paste0("ERROR!: Invalid mechanisms found in the PSNUxIM tab. 
+                  These MUST be reallocated to a valid mechanism
+                  ",paste(bad_mechs,sep="",collapse=","))
+    d$info$warningMsg<-append(msg,d$info$warningMsg)
+    d$info$had_error<-TRUE
+  }
+  
+  d
+  
+}
+
+getMechanismView<-function() {
   cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
   
   if ( file.access(cached_mechs,4) == 0 ) {
     
     mechs <-readRDS(cached_mechs)
-
+    
   } else {
     
-  mechs <- paste0(getOption("baseurl"), "api/sqlViews/fgUtV6e9YIX/data.csv") %>%
+    mechs <- paste0(getOption("baseurl"), "api/sqlViews/fgUtV6e9YIX/data.csv") %>%
       httr::GET() %>%
       httr::content(., "text") %>%
       readr::read_csv(col_names = TRUE) %>%
-      dplyr::select(mechanismCode = "code", partner, agency, ou)
+      dplyr::select(mechanismCode = "code", partner, agency, ou,startdate,enddate)
   }
   
+  mechs
+}
+
+adornMechanisms <- function(d) {
+  
+  mechs<-getMechanismView()
   dplyr::left_join( d , mechs, by = "mechanismCode" )
 
 }
@@ -181,6 +220,48 @@ getDEGSMap <- function(uid) {
 
 }
 
+generateMechanismMap<-function() {
+  
+  
+  mechs<- paste0(getOption("baseurl"),"api/categoryOptionCombos?filter=categoryCombo.id:eq:wUpfppgjEza&fields=code,name,id,categoryOptions[startDate,endDate,organisationUnits[id,name]]&paging=false") %>% 
+    URLencode(.) %>%
+    httr::GET(., httr::timeout(60)) %>%
+    httr::content(.,"text") %>%
+    jsonlite::fromJSON(., flatten = TRUE) %>%
+    purrr::pluck(.,"categoryOptionCombos")
+  
+  mech_has_ou <- mechs %>% 
+    purrr::pluck(.,"categoryOptions") %>%
+    purrr::map(.,"organisationUnits") %>%
+    purrr::flatten(.) %>% 
+    purrr::map(., function(x) { class(x) == "data.frame" }) %>%
+    unlist(.)
+  
+  mechs %<>% dplyr::filter(mech_has_ou) 
+    
+  mechs$startDate <-
+    as.Date(sapply(mechs$categoryOptions, function(x)
+      ifelse(is.null(x$startDate), "1900-01-01", x$startDate)),
+      "%Y-%m-%d")
+  mechs$endDate <-
+    as.Date(sapply(mechs$categoryOptions, function(x)
+      ifelse(is.null(x$endDate), "1900-01-01", x$endDate)),
+      "%Y-%m-%d")
+  
+
+  mechs_ous<- mechs %>% 
+    purrr::pluck(.,"categoryOptions") %>%
+    purrr::map(.,"organisationUnits") %>%
+    purrr::flatten_dfr(.,.id="foo") %>%
+    dplyr::select("operating_unit"=name,
+                  "operating_unit_uid"=id)
+  
+   mechs %>% dplyr::select(-categoryOptions) %>%
+    dplyr::bind_cols(.,mechs_ous)
+  
+  
+}
+
 #Used with permission from @achafetz  
 #https://github.com/USAID-OHA-SI/tameDP/blob/master/R/clean_indicators.R
 
@@ -211,7 +292,8 @@ adornMERData <- function(df) {
                    by = c("indicatorCode" = "indicatorCode",
                           "Age" = "validAges",
                           "Sex" = "validSexes",
-                          "KeyPop" = "validKPs"))
+                          "KeyPop" = "validKPs")) %>%
+     dplyr::filter(!is.na(dataelementuid) & !is.na(categoryoptioncombouid))
  
    #Join category option group sets
    df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
