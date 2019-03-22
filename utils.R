@@ -31,7 +31,13 @@ filterZeros <- function(d) {
 
 validatePSNUData <- function(d) {
   #Validation rule checking
-  vr_data <- d$datim$PSNUxIM 
+  vr_data <- d$datim$PSNUxIM %>%
+  dplyr::mutate(value = datapackr::round_trunc(value))
+  
+  
+  round_trunc <- function(x) {
+    trunc(abs(x) + 0.5) * sign(x)
+  }
   
   names(vr_data) <- c("dataElement",
                       "period",
