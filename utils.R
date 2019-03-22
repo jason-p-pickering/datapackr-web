@@ -122,6 +122,9 @@ validateMechanisms<-function(d) {
     dplyr::filter(enddate >= as.Date('2020-09-30')) %>%
     dplyr::pull(mechanismCode)
   
+  #Allow for dedupe
+  mechs <- append("00000",mechs)
+  
   bad_mechs<-vr_data[!(vr_data %in% mechs)]
   
   if (length(bad_mechs) > 0 ) {
