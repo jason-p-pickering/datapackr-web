@@ -31,17 +31,14 @@ filterZeros <- function(d) {
 
 validatePSNUData <- function(d) {
   #Validation rule checking
-  vr_data <- d$datim$PSNUxIM %>%  
-    dplyr::filter(!is.na(dataElement))
-    #This should really not happen, but lets be sure we don't 
-
+  vr_data <- d$datim$PSNUxIM 
+  
   names(vr_data) <- c("dataElement",
                       "period",
                       "orgUnit",
                       "categoryOptionCombo",
                       "attributeOptionCombo",
                       "value")
-  
   
   # We need ALL mechanisms to be in DATIM before remapping....TODO
   # vr_data$attributeOptionCombo <-
