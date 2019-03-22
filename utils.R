@@ -32,7 +32,8 @@ filterZeros <- function(d) {
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM %>%
-  dplyr::mutate(value = datapackr::round_trunc(value))
+  dplyr::mutate(value = datapackr::round_trunc(value)) %>%
+  dplyr::filter(value != 0)
   
   
   round_trunc <- function(x) {
