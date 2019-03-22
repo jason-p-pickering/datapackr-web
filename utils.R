@@ -32,7 +32,7 @@ filterZeros <- function(d) {
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM %>%  
-    dplyr::filter(is.na(dataElement))
+    dplyr::filter(!is.na(dataElement))
     #This should really not happen, but lets be sure we don't 
 
   names(vr_data) <- c("dataElement",
