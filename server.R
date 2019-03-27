@@ -24,6 +24,17 @@ shinyServer(function(input, output, session) {
     ready$ok <- TRUE
   })  
   
+  observeEvent(input$reset_input, {
+    shinyjs::reset("side-panel")
+    shinyjs::enable("file1")
+    shinyjs::disable("validate")
+  })
+  
+  observeEvent(input$login_button, {
+    is_logged_in<-FALSE
+    user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
+  })  
+  
   
   output$ui <- renderUI({
     
@@ -78,14 +89,6 @@ shinyServer(function(input, output, session) {
   
   user_input <- reactiveValues(authenticated = FALSE, status = "")
   
-  observeEvent(input$reset_input, {
-    shinyjs::reset("side-panel")
-  })
-  
-  observeEvent(input$login_button, {
-    is_logged_in<-FALSE
-    user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
-  })   
   
   # password entry UI componenets:
   #   username and password text fields, login button
@@ -101,7 +104,6 @@ shinyServer(function(input, output, session) {
       actionButton("login_button", "Log in!")
     ))
   })
-  
   
   validate<-function() {
     
