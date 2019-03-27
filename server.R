@@ -197,13 +197,19 @@ shinyServer(function(input, output, session) {
     
     if (!inherits(vr,"error")  & !is.null(vr)){
       
-      vr %>%
+       vr_results <- vr %>%
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"vr_rules_check")  
       
-      } else {
-        data.frame(message="Congratulations! No validation rule issues found!")
-        }
+    }  else {
+      return(NULL)
+    }
+     
+    if (NROW(vr_results) == 0 ) {
+      return(data.frame(message="Congratulations! No validation rule issues found!"))
+    }
+    
+  vr_results
     
   })
   
