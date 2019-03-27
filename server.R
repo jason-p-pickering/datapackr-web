@@ -26,6 +26,7 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$reset_input, {
     shinyjs::reset("side-panel")
+    shinyjs::reset("main-panel")
     shinyjs::enable("file1")
     shinyjs::disable("validate")
     validate(reset=TRUE)
@@ -76,6 +77,7 @@ shinyServer(function(input, output, session) {
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
           ),
           mainPanel(tabsetPanel(
+            id = "main-panel",
             type = "tabs",
             tabPanel("Messages",   tags$ul(uiOutput('messages'))),
             tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
