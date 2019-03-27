@@ -48,6 +48,7 @@ shinyServer(function(input, output, session) {
         sidebarLayout(
           sidebarPanel(
             shinyjs::useShinyjs(),
+            id = "side-panel",
             fileInput(
               "file1",
               "Choose DataPack (Must be XLSX!):",
@@ -58,6 +59,7 @@ shinyServer(function(input, output, session) {
             ),
             tags$hr(),
             actionButton("validate","Validate"),
+            actionButton("reset_input", "Reset inputs"),
             tags$hr(),
             downloadButton("downloadData", "Download SUBNATT results"),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
@@ -75,6 +77,10 @@ shinyServer(function(input, output, session) {
   
   
   user_input <- reactiveValues(authenticated = FALSE, status = "")
+  
+  observeEvent(input$reset_input, {
+    shinyjs::reset("side-panel")
+  })
   
   observeEvent(input$login_button, {
     is_logged_in<-FALSE
