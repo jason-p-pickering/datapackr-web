@@ -14,6 +14,7 @@ shinyServer(function(input, output, session) {
   ready <- reactiveValues(ok = FALSE)
   
   observeEvent(input$file1, {
+    shinyjs::show("validate")
     shinyjs::enable("validate")
     ready$ok <- FALSE
   }) 
@@ -27,7 +28,8 @@ shinyServer(function(input, output, session) {
   observeEvent(input$reset_input, {
     shinyjs::reset("side-panel")
     shinyjs::enable("file1")
-    shinyjs::disable("validate")
+    shinyjs::hide("validate")
+    shinyjs::hide("downloadFlatPack")
   })
   
   observeEvent(input$login_button, {
