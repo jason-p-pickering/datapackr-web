@@ -29,7 +29,10 @@ shinyServer(function(input, output, session) {
     shinyjs::reset("main-panel")
     shinyjs::enable("file1")
     shinyjs::disable("validate")
-    validation_results <<- NULL
+    output$indicator_summary<-NULL
+    output$modality_summary<-NULL
+    output$messages<-NULL
+    output$vr_rules<-NULL
   })
   
   observeEvent(input$login_button, {
@@ -105,9 +108,7 @@ shinyServer(function(input, output, session) {
     ))
   })
   
-  validate<-function(reset=FALSE) {
-    
-    if (reset) { return(NULL) }
+  validate<-function() {
     
     shinyjs::hide("downloadFlatPack")
     
