@@ -191,6 +191,10 @@ shinyServer(function(input, output, session) {
     
     vr<-validation_results()
     
+    if ( is.null(vr)) {
+      return(NULL)
+    }
+    
     if (!inherits(vr,"error")  & !is.null(vr)){
       
       vr %>%
@@ -198,7 +202,7 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"vr_rules_check")  
       
       } else {
-          NULL
+        data.frame(message="Congratulations! No validation rule issues found!")
         }
     
   })
