@@ -14,6 +14,7 @@ shinyServer(function(input, output, session) {
   ready <- reactiveValues(ok = FALSE)
   
   observeEvent(input$file1, {
+    shinyjs::show("validate")
     shinyjs::enable("validate")
     ready$ok <- FALSE
   }) 
@@ -24,6 +25,17 @@ shinyServer(function(input, output, session) {
     ready$ok <- TRUE
   })  
   
+  observeEvent(input$reset_input, {
+    shinyjs::reset("side-panel")
+    shinyjs::enable("file1")
+    shinyjs::hide("validate")
+    shinyjs::hide("downloadFlatPack")
+  })
+  
+  observeEvent(input$login_button, {
+    is_logged_in<-FALSE
+    user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
+  })  
   
   output$ui <- renderUI({
     
@@ -48,6 +60,7 @@ shinyServer(function(input, output, session) {
         sidebarLayout(
           sidebarPanel(
             shinyjs::useShinyjs(),
+            id = "side-panel",
             fileInput(
               "file1",
               "Choose DataPack (Must be XLSX!):",
@@ -58,13 +71,14 @@ shinyServer(function(input, output, session) {
             ),
             tags$hr(),
             actionButton("validate","Validate"),
+            actionButton("reset_input", "Reset inputs"),
             tags$hr(),
-            downloadButton("downloadData", "Download SUBNATT results"),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
           ),
           mainPanel(tabsetPanel(
+            id = "main-panel",
             type = "tabs",
-            tabPanel("Messages",   tags$ul(uiOutput('messages'))),
+            tabPanel("Messages", tags$ul(uiOutput('messages'))),
             tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
             tabPanel("HTS Modality Summary", plotOutput("modality_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules"))
@@ -73,13 +87,7 @@ shinyServer(function(input, output, session) {
   }
 })
   
-  
   user_input <- reactiveValues(authenticated = FALSE, status = "")
-  
-  observeEvent(input$login_button, {
-    is_logged_in<-FALSE
-    user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
-  })   
   
   # password entry UI componenets:
   #   username and password text fields, login button
@@ -96,10 +104,8 @@ shinyServer(function(input, output, session) {
     ))
   })
   
-  
   validate<-function() {
     
-    shinyjs::hide("downloadData")
     shinyjs::hide("downloadFlatPack")
     
     if (!ready$ok) {return(NULL)}
@@ -137,7 +143,6 @@ shinyServer(function(input, output, session) {
         d$data$distributedMER  %<>%  adornMERData()
         Sys.sleep(0.5)
         
-        shinyjs::show("downloadData")
         shinyjs::show("downloadFlatPack")
       }
     })
@@ -197,7 +202,6 @@ shinyServer(function(input, output, session) {
   })
   
   output$downloadFlatPack <- downloadHandler(
-    
     filename = function() {
       
       prefix <- "flatpack"
@@ -246,20 +250,9 @@ shinyServer(function(input, output, session) {
       download_data$validation_rules <- vr_rules
       openxlsx::write.xlsx(download_data, file = file)
       
-    })
-    
-    output$downloadData <- downloadHandler(
-      filename = "SUBNAT_IMPATT.csv",
-      content = function(file) {
-        
-        download_data <- validation_results() %>% 
-          purrr::pluck(.,"datim") %>%
-          purrr::pluck(.,"SUBNAT_IMPATT")
-     
-         write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
-      }
+    }
+    )
 
-  )
   
   output$messages <- renderUI({
     
