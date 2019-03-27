@@ -71,8 +71,6 @@ shinyServer(function(input, output, session) {
             tags$hr(),
             actionButton("validate","Validate"),
             actionButton("reset_input", "Reset inputs"),
-            tags$hr(),
-            downloadButton("downloadData", "Download SUBNATT results"),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
           ),
           mainPanel(tabsetPanel(
@@ -107,7 +105,6 @@ shinyServer(function(input, output, session) {
   
   validate<-function() {
     
-    shinyjs::hide("downloadData")
     shinyjs::hide("downloadFlatPack")
     
     if (!ready$ok) {return(NULL)}
@@ -145,7 +142,6 @@ shinyServer(function(input, output, session) {
         d$data$distributedMER  %<>%  adornMERData()
         Sys.sleep(0.5)
         
-        shinyjs::show("downloadData")
         shinyjs::show("downloadFlatPack")
       }
     })
@@ -205,7 +201,6 @@ shinyServer(function(input, output, session) {
   })
   
   output$downloadFlatPack <- downloadHandler(
-    
     filename = function() {
       
       prefix <- "flatpack"
@@ -254,20 +249,9 @@ shinyServer(function(input, output, session) {
       download_data$validation_rules <- vr_rules
       openxlsx::write.xlsx(download_data, file = file)
       
-    })
-    
-    output$downloadData <- downloadHandler(
-      filename = "SUBNAT_IMPATT.csv",
-      content = function(file) {
-        
-        download_data <- validation_results() %>% 
-          purrr::pluck(.,"datim") %>%
-          purrr::pluck(.,"SUBNAT_IMPATT")
-     
-         write.table(download_data, file = file, sep=",",row.names = FALSE,col.names = TRUE,quote=TRUE)
-      }
+    }
+    )
 
-  )
   
   output$messages <- renderUI({
     
