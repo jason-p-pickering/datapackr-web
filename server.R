@@ -26,13 +26,9 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$reset_input, {
     shinyjs::reset("side-panel")
-    shinyjs::reset("main-panel")
+    shinyjs::reset("message-tab")
     shinyjs::enable("file1")
     shinyjs::disable("validate")
-    output$indicator_summary<-NULL
-    output$modality_summary<-NULL
-    output$messages<-NULL
-    output$vr_rules<-NULL
   })
   
   observeEvent(input$login_button, {
@@ -82,8 +78,8 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             id = "main-panel",
             type = "tabs",
-            tabPanel("Messages",   tags$ul(uiOutput('messages'))),
-            tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
+            tabPanel("Messages", id="message-tab",   tags$ul(uiOutput('messages'))),
+            tabPanel("Indicator summary", id="indicator-summary-tab", dataTableOutput("indicator_summary")),
             tabPanel("HTS Modality Summary", plotOutput("modality_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
