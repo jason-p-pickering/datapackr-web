@@ -28,6 +28,7 @@ shinyServer(function(input, output, session) {
     shinyjs::reset("side-panel")
     shinyjs::enable("file1")
     shinyjs::disable("validate")
+    validate(reset=TRUE)
   })
   
   observeEvent(input$login_button, {
@@ -85,9 +86,7 @@ shinyServer(function(input, output, session) {
   }
 })
   
-  
   user_input <- reactiveValues(authenticated = FALSE, status = "")
-  
   
   # password entry UI componenets:
   #   username and password text fields, login button
@@ -104,7 +103,9 @@ shinyServer(function(input, output, session) {
     ))
   })
   
-  validate<-function() {
+  validate<-function(reset=FALSE) {
+    
+    if (reset) { return(NULL)}
     
     shinyjs::hide("downloadFlatPack")
     
