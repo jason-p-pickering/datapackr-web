@@ -30,6 +30,7 @@ shinyServer(function(input, output, session) {
     shinyjs::enable("file1")
     shinyjs::hide("validate")
     shinyjs::hide("downloadFlatPack")
+    ready$ok<-FALSE
   })
   
   observeEvent(input$login_button, {
@@ -120,6 +121,7 @@ shinyServer(function(input, output, session) {
     withProgress(message = 'Validating file', value = 0,{
       
       shinyjs::disable("file1")
+      shinyjs::disable("validate")
       incProgress(0.1, detail = ("Validating your DataPack"))
       d<-tryCatch({
         datapackr::unPackData(inFile$datapath)},
