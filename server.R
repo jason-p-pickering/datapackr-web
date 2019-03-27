@@ -26,7 +26,6 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$reset_input, {
     shinyjs::reset("side-panel")
-    shinyjs::reset("message-tab")
     shinyjs::enable("file1")
     shinyjs::disable("validate")
   })
@@ -35,7 +34,6 @@ shinyServer(function(input, output, session) {
     is_logged_in<-FALSE
     user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
   })  
-  
   
   output$ui <- renderUI({
     
@@ -78,8 +76,8 @@ shinyServer(function(input, output, session) {
           mainPanel(tabsetPanel(
             id = "main-panel",
             type = "tabs",
-            tabPanel("Messages", id="message-tab",   tags$ul(uiOutput('messages'))),
-            tabPanel("Indicator summary", id="indicator-summary-tab", dataTableOutput("indicator_summary")),
+            tabPanel("Messages", tags$ul(uiOutput('messages'))),
+            tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
             tabPanel("HTS Modality Summary", plotOutput("modality_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
