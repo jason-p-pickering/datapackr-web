@@ -71,6 +71,7 @@ shinyServer(function(input, output, session) {
             tags$hr(),
             actionButton("validate","Validate"),
             actionButton("reset_input", "Reset inputs"),
+            tags$hr(),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
           ),
           mainPanel(tabsetPanel(
