@@ -122,10 +122,10 @@ validateMechanisms<-function(d) {
   #TODO: Removve hard coding of time periods and 
   #filter for the OU as well
   mechs<-getMechanismView() %>%
-    dplyr::filter(!is.na(startdate)) %>%
-    dplyr::filter(!is.na(enddate)) %>%
-    dplyr::filter(startdate <= as.Date('2019-10-01')) %>%
-    dplyr::filter(enddate >= as.Date('2020-09-30')) %>%
+    dplyr::filter(!is.na(startDate)) %>%
+    dplyr::filter(!is.na(endDate)) %>%
+    dplyr::filter(startDate <= as.Date('2019-10-01')) %>%
+    dplyr::filter(endDate >= as.Date('2020-09-30')) %>%
     dplyr::pull(mechanismCode)
   
   #Allow for dedupe
@@ -266,7 +266,7 @@ generateMechanismMap<-function() {
                   "operating_unit_uid"=id)
   
    mechs %>% dplyr::select(-categoryOptions) %>%
-    dplyr::bind_cols(.,mechs_ous)
+    dplyr::bind_cols(.,mechs_ous) -> mechs
   
   
 }
