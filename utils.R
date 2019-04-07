@@ -1,7 +1,10 @@
 require(datapackr)
 require(scales)
+require(futile.logger)
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
 options("baseurl" = "http://127.0.0.1:8080/")
+logger <- flog.logger()
+
 
 DHISLogin <- function(baseurl, username, password) {
   httr::set_config(httr::config(http_version = 0))
