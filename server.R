@@ -36,7 +36,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$login_button, {
     is_logged_in<-FALSE
     user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
-    
+    flog.info(paste0("User",input$user_name, " logged in."), name="datapack")
   })  
   
   output$ui <- renderUI({

@@ -103,12 +103,29 @@ validatePSNUData <- function(d) {
   
   vr_violations %<>% dplyr::filter(diff >= 5) 
    
-  if ( NROW(vr_violations) > 0 ) {
+  if (NROW(vr_violations) > 0) {
     d$datim$vr_rules_check <- vr_violations  %>%
-      dplyr::select(name,ou_name,mech_code,formula,diff) %>%
-      dplyr::mutate(name = gsub(pattern = " DSD,","",name))     
+      dplyr::select(name, ou_name, mech_code, formula, diff) %>%
+      dplyr::mutate(name = gsub(pattern = " DSD,", "", name))
+    flog.info(
+      paste0(
+        NROW(vr_violations),
+        " validation rule issues found in ",
+        d$info$datapack_name,
+        " DataPack."
+      ),
+      name = "datapack"
+    )
   } else {
     d$datim$vr_rules_check <- NULL
+    flog.info(
+      paste0(
+        "No validation rule issues found in ",
+        d$info$datapack_name,
+        " DataPack."
+      ),
+      name = "datapack"
+    )
     return(d)
   }
  
