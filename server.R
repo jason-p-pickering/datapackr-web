@@ -131,7 +131,7 @@ shinyServer(function(input, output, session) {
         })
       
       if (!inherits(d,"error") & !is.null(d)) {
-        flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."))
+        flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
         d <- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
         d <- validatePSNUData(d)

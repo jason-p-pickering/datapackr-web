@@ -4,6 +4,7 @@ require(futile.logger)
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
 options("baseurl" = "http://127.0.0.1:8080/")
 logger <- flog.logger()
+flog.appender(appender.file("/var/log/datapack.log"), name="datapack")
 
 
 DHISLogin <- function(baseurl, username, password) {
