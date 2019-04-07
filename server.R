@@ -36,7 +36,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$login_button, {
     is_logged_in<-FALSE
     user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
-    flog.info(paste0("User",input$user_name, " logged in."), name="datapack")
+    flog.info(paste0("User ",input$user_name, " logged in."), name="datapack")
   })  
   
   output$ui <- renderUI({
@@ -259,6 +259,16 @@ shinyServer(function(input, output, session) {
       vr_rules<-validation_results() %>% 
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"vr_rules_check")
+      datapack_name <-
+        validation_results() %>% 
+        purrr::pluck(.,"info") %>%
+        purrr::pluck(.,"datapack_name")
+      
+      flog.info(
+        paste0("Flatpack requested for ", datapack_name) 
+        ,
+        name = "datapack"
+      )
       
       download_data$validation_rules <- vr_rules
       openxlsx::write.xlsx(download_data, file = file)
