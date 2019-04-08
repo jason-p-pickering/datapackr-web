@@ -5,7 +5,7 @@ require(purrr)
 require(dplyr)
 require(datimvalidation)
 require(ggplot2)
-
+require(futile.logger)
 
 source("./utils.R")
 
@@ -36,6 +36,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$login_button, {
     is_logged_in<-FALSE
     user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
+    flog.info(paste0("User ",input$user_name, " logged in."), name="datapack")
   })  
   
   output$ui <- renderUI({
@@ -130,7 +131,7 @@ shinyServer(function(input, output, session) {
         })
       
       if (!inherits(d,"error") & !is.null(d)) {
-        
+        flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
         d <- filterZeros(d)
         incProgress(0.1, detail = ("Checking validation rules"))
         d <- validatePSNUData(d)
@@ -258,6 +259,16 @@ shinyServer(function(input, output, session) {
       vr_rules<-validation_results() %>% 
         purrr::pluck(.,"datim") %>%
         purrr::pluck(.,"vr_rules_check")
+      datapack_name <-
+        validation_results() %>% 
+        purrr::pluck(.,"info") %>%
+        purrr::pluck(.,"datapack_name")
+      
+      flog.info(
+        paste0("Flatpack requested for ", datapack_name) 
+        ,
+        name = "datapack"
+      )
       
       download_data$validation_rules <- vr_rules
       openxlsx::write.xlsx(download_data, file = file)

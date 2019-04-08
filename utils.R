@@ -1,7 +1,11 @@
 require(datapackr)
 require(scales)
+require(futile.logger)
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
 options("baseurl" = "http://127.0.0.1:8080/")
+logger <- flog.logger()
+flog.appender(appender.file("/var/log/datapack.log"), name="datapack")
+
 
 DHISLogin <- function(baseurl, username, password) {
   httr::set_config(httr::config(http_version = 0))
@@ -99,12 +103,29 @@ validatePSNUData <- function(d) {
   
   vr_violations %<>% dplyr::filter(diff >= 5) 
    
-  if ( NROW(vr_violations) > 0 ) {
+  if (NROW(vr_violations) > 0) {
     d$datim$vr_rules_check <- vr_violations  %>%
-      dplyr::select(name,ou_name,mech_code,formula,diff) %>%
-      dplyr::mutate(name = gsub(pattern = " DSD,","",name))     
+      dplyr::select(name, ou_name, mech_code, formula, diff) %>%
+      dplyr::mutate(name = gsub(pattern = " DSD,", "", name))
+    flog.info(
+      paste0(
+        NROW(vr_violations),
+        " validation rule issues found in ",
+        d$info$datapack_name,
+        " DataPack."
+      ),
+      name = "datapack"
+    )
   } else {
     d$datim$vr_rules_check <- NULL
+    flog.info(
+      paste0(
+        "No validation rule issues found in ",
+        d$info$datapack_name,
+        " DataPack."
+      ),
+      name = "datapack"
+    )
     return(d)
   }
  
