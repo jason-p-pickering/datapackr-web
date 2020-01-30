@@ -2,9 +2,9 @@ require(datapackr)
 require(scales)
 require(futile.logger)
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
-options("baseurl" = "http://127.0.0.1:8080/")
+options("baseurl" = "https://test-mer2.datim.org/")
 logger <- flog.logger()
-flog.appender(appender.file("/var/log/datapack.log"), name="datapack")
+flog.appender(appender.file("/Users/sam/Documents/var/log/datapack.log"), name="datapack")
 
 
 DHISLogin <- function(baseurl, username, password) {
@@ -27,8 +27,8 @@ filterZeros <- function(d) {
   #Filter any zeros
   d$data$MER %<>% dplyr::filter( value != 0 )
   d$data$SUBNAT_IMPATT %<>% dplyr::filter( value != 0 )
-  d$data$SNUxIM %<>% dplyr::filter( distribution != 0 )
-  d$data$distributedMER %<>% dplyr::filter( value != 0 )
+  # d$data$SNUxIM %<>% dplyr::filter( distribution != 0 )
+  # d$data$distributedMER %<>% dplyr::filter( value != 0 )
   
   d
 }
@@ -298,7 +298,7 @@ generateMechanismMap<-function() {
 adornMERData <- function(df) {
   
   
-  hiv_specific<-getCOGSMap("bDWsPYyXgWP") %>%
+  hiv_specific<-getCOGSMap("bDWsPYyXgWP") %>% #HIV Test Status (Specific)
     purrr::pluck("dimension_map") %>%
     dplyr::select("categoryoptioncombouid"=coc_uid,
                   "resultstatus"=category_option_group_name) %>%
@@ -307,7 +307,7 @@ adornMERData <- function(df) {
     dplyr::mutate(resultstatus = stringr::str_trim(resultstatus))
     
   
-  hiv_inclusive<-getCOGSMap("ipBFu42t2sJ") %>%
+  hiv_inclusive<-getCOGSMap("ipBFu42t2sJ") %>% # HIV Test Status (Inclusive)
   purrr::pluck("dimension_map") %>%
     dplyr::select("categoryoptioncombouid"=coc_uid,
                   "resultstatus_inclusive"=category_option_group_name) %>%

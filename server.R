@@ -81,9 +81,9 @@ shinyServer(function(input, output, session) {
             id = "main-panel",
             type = "tabs",
             tabPanel("Messages", tags$ul(uiOutput('messages'))),
-            tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
-            tabPanel("HTS Modality Summary", plotOutput("modality_summary")),
-            tabPanel("Validation rules", dataTableOutput("vr_rules"))
+            # tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
+             tabPanel("HTS Modality Summary", plotOutput("modality_summary"))#,
+            # tabPanel("Validation rules", dataTableOutput("vr_rules"))
           ))
         ))
   }
@@ -125,94 +125,94 @@ shinyServer(function(input, output, session) {
       shinyjs::disable("validate")
       incProgress(0.1, detail = ("Validating your DataPack"))
       d<-tryCatch({
-        datapackr::unPackData(inFile$datapath)},
+        datapackr::unPackTool(inFile$datapath)},
         error = function(e){
           return(e)
         })
-      
       if (!inherits(d,"error") & !is.null(d)) {
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
-        d <- filterZeros(d)
-        incProgress(0.1, detail = ("Checking validation rules"))
-        d <- validatePSNUData(d)
-        incProgress(0.1,detail="Validating mechanisms")
-        d <- validateMechanisms(d)
-        incProgress(0.1, detail = ("Making mechanisms prettier"))
-        d$data$distributedMER %<>% adornMechanisms()
-        d$data$SNUxIM %<>% adornMechanisms()
-        Sys.sleep(0.5)
-        incProgress(0.1, detail = ("Running dimensional transformation"))
-        d$data$MER %<>% adornMERData()
-        d$data$distributedMER  %<>%  adornMERData()
-        Sys.sleep(0.5)
+       d <- filterZeros(d)
+       # incProgress(0.1, detail = ("Checking validation rules"))
+       # d <- validatePSNUData(d)
+      #  incProgress(0.1,detail="Validating mechanisms")
+      #  d <- validateMechanisms(d)
+      #  incProgress(0.1, detail = ("Making mechanisms prettier"))
+      #  d$data$distributedMER %<>% adornMechanisms()
+      #  d$data$SNUxIM %<>% adornMechanisms()
+      #  Sys.sleep(0.5)
+      #  incProgress(0.1, detail = ("Running dimensional transformation"))
+      # d$data$MER %<>% adornMERData()
+      #  d$data$distributedMER  %<>%  adornMERData()
+      #  Sys.sleep(0.5)
         
         shinyjs::show("downloadFlatPack")
       }
     })
+    d_temp<<-d
     return(d)
     
   }
   
   validation_results <- reactive({ validate() })
   
-  output$indicator_summary<-renderDataTable({
-    
-    vr<-validation_results()
-    
-    if (!inherits(vr,"error") & !is.null(vr)){
-      vr  %>% 
-        purrr::pluck(.,"data") %>%
-        purrr::pluck(.,"distributedMER") %>%
-        dplyr::group_by(technical_area,disagg_type,agency, numerator_denominator) %>% 
-        dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
-        dplyr::arrange(technical_area,disagg_type,agency, numerator_denominator) 
-      
-    } else {
-      NULL
-    }
-  })
-  
-  output$modality_summary <- renderPlot({ 
-    
-    vr<-validation_results()
-    
-    if (!inherits(vr,"error") & !is.null(vr)){
-      vr  %>% 
-        purrr::pluck(.,"data") %>%
-        purrr::pluck(.,"MER") %>%
-        modalitySummaryChart()
-      
-    } else {
-      NULL
-    }
-    
-  },height = 400,width = 600)
-  
-  output$vr_rules <- renderDataTable({ 
-    
-    vr<-validation_results()
-    
-    if ( is.null(vr)) {
-      return(NULL)
-    }
-    
-    if (!inherits(vr,"error")  & !is.null(vr)){
-      
-       vr_results <- vr %>%
-        purrr::pluck(.,"datim") %>%
-        purrr::pluck(.,"vr_rules_check")  
-      
-    }  else {
-      return(NULL)
-    }
-     
-    if (NROW(vr_results) == 0 ) {
-      return(data.frame(message="Congratulations! No validation rule issues found!"))
-    }
-    
-  vr_results
-    
-  })
+  # output$indicator_summary<-renderDataTable({
+  # 
+  #   vr<-validation_results()
+  # 
+  #   if (!inherits(vr,"error") & !is.null(vr)){
+  #     vr  %>%
+  #       purrr::pluck(.,"data") %>%
+  #       purrr::pluck(.,"distributedMER") %>%
+  #       dplyr::group_by(technical_area,disagg_type,agency, numerator_denominator) %>%
+  #       dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
+  #       dplyr::arrange(technical_area,disagg_type,agency, numerator_denominator)
+  # 
+  #   } else {
+  #     NULL
+  #   }
+  # })
+  # 
+  # output$modality_summary <- renderPlot({
+  # 
+  #   vr<-validation_results()
+  # 
+  #   if (!inherits(vr,"error") & !is.null(vr)){
+  #     vr  %>%
+  #       purrr::pluck(.,"data") %>%
+  #       purrr::pluck(.,"MER") %>%
+  #       modalitySummaryChart()
+  # 
+  #   } else {
+  #     NULL
+  #   }
+  # 
+  # },height = 400,width = 600)
+  # 
+  # output$vr_rules <- renderDataTable({
+  # 
+  #   vr<-validation_results()
+  # 
+  #   if ( is.null(vr)) {
+  #     return(NULL)
+  #   }
+  # 
+  #   if (!inherits(vr,"error")  & !is.null(vr)){
+  # 
+  #      vr_results <- vr %>%
+  #       purrr::pluck(.,"datim") %>%
+  #       purrr::pluck(.,"vr_rules_check")
+  # 
+  #   }  else {
+  #     return(NULL)
+  #   }
+  #    
+  #   if (NROW(vr_results) == 0 ) {
+  #     return(data.frame(message="Congratulations! No validation rule issues found!"))
+  #   }
+  #   
+  # vr_results
+  #   
+  # })
   
   output$downloadFlatPack <- downloadHandler(
     filename = function() {
@@ -234,7 +234,7 @@ shinyServer(function(input, output, session) {
           "psnuid",
           "PSNU",
           "technical_area",
-          "indicatorCode", 
+          "indicator_code", 
           "disagg_type",
           "Age",
           "Sex",
@@ -252,13 +252,13 @@ shinyServer(function(input, output, session) {
         columns_existing <-which(columns_to_keep %in% names(x))
         columns_to_keep[columns_existing]
       }
-      
-      download_data$MER %<>% dplyr::select(.,merColumnsToKeep(.))
-      download_data$distributedMER %<>%  dplyr::select(.,merColumnsToKeep(.))
-      
-      vr_rules<-validation_results() %>% 
-        purrr::pluck(.,"datim") %>%
-        purrr::pluck(.,"vr_rules_check")
+      # 
+      # download_data$MER %<>% dplyr::select(.,merColumnsToKeep(.))
+      # download_data$distributedMER %<>%  dplyr::select(.,merColumnsToKeep(.))
+      # 
+      # vr_rules<-validation_results() %>% 
+      #   purrr::pluck(.,"datim") %>%
+      #   purrr::pluck(.,"vr_rules_check")
       datapack_name <-
         validation_results() %>% 
         purrr::pluck(.,"info") %>%
@@ -293,7 +293,7 @@ shinyServer(function(input, output, session) {
       
       messages <- validation_results() %>%
         purrr::pluck(., "info") %>%
-        purrr::pluck(., "warningMsg")
+        purrr::pluck(., "warning_msg")
       
       if (!is.null(messages))  {
         lapply(messages, function(x)
