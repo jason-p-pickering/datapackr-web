@@ -148,7 +148,7 @@ shinyServer(function(input, output, session) {
         shinyjs::show("downloadFlatPack")
       }
     })
-    d_temp<<-d
+
     return(d)
     
   }
