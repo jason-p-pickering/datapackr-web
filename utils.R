@@ -401,3 +401,14 @@ modalitySummaryChart <- function(df) {
           panel.grid.minor.y = element_blank())
 
 }
+
+getCountryNameFromUID<-function(uid) {
+  
+   
+  paste0(getOption("baseurl"),"api/organisationUnits/",uid,"?fields=shortName") %>%
+    URLencode(.) %>%
+    httr::GET(.) %>%
+    httr::content(.,"text") %>%
+    jsonlite::fromJSON(.) %>% 
+    purrr::pluck(.,"shortName")
+}

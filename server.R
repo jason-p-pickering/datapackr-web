@@ -97,7 +97,7 @@ shinyServer(function(input, output, session) {
     
     wellPanel(fluidRow(
       img(src='pepfar.png', align = "center"),
-      h4("Welcome to the DataPack Validation App. Please login with your DATIM credentials:")
+      h4("Welcome to the  COP20 DataPack Validation App. Please login with your DATIM credentials:")
     ),
     fluidRow(
       textInput("user_name", "Username: ",width = "600px"),
@@ -155,23 +155,23 @@ shinyServer(function(input, output, session) {
   
   validation_results <- reactive({ validate() })
   
-  # output$indicator_summary<-renderDataTable({
-  # 
-  #   vr<-validation_results()
-  # 
-  #   if (!inherits(vr,"error") & !is.null(vr)){
-  #     vr  %>%
-  #       purrr::pluck(.,"data") %>%
-  #       purrr::pluck(.,"distributedMER") %>%
-  #       dplyr::group_by(technical_area,disagg_type,agency, numerator_denominator) %>%
-  #       dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
-  #       dplyr::arrange(technical_area,disagg_type,agency, numerator_denominator)
-  # 
-  #   } else {
-  #     NULL
-  #   }
-  # })
-  # 
+   output$indicator_summary<-renderDataTable({
+   
+     vr<-validation_results()
+   
+     if (!inherits(vr,"error") & !is.null(vr)){
+       vr  %>%
+         purrr::pluck(.,"data") %>%
+         purrr::pluck(.,"MER") %>%
+         dplyr::group_by(indicator_code) %>%
+         dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
+         dplyr::arrange(indicator_code)
+    
+      } else {
+       NULL
+     }
+   })
+   
   # output$modality_summary <- renderPlot({
   # 
   #   vr<-validation_results()
@@ -225,44 +225,21 @@ shinyServer(function(input, output, session) {
     },
     content = function(file) {
       
-      download_data <- validation_results() %>% 
-        purrr::pluck(.,"data")
-      
-      merColumnsToKeep<-function(x) {
-  
-        columns_to_keep<-c(
-          "psnuid",
-          "PSNU",
-          "technical_area",
-          "indicator_code", 
-          "disagg_type",
-          "Age",
-          "Sex",
-          "KeyPop",
-          "resultstatus",
-          "resultstatus_inclusive",
-          "numerator_denominator",
-          "hts_modality",
-          "mechanismCode",
-          "partner",
-          "agency",
-          "value"
-        )
-        
-        columns_existing <-which(columns_to_keep %in% names(x))
-        columns_to_keep[columns_existing]
-      }
-      # 
-      # download_data$MER %<>% dplyr::select(.,merColumnsToKeep(.))
-      # download_data$distributedMER %<>%  dplyr::select(.,merColumnsToKeep(.))
-      # 
-      # vr_rules<-validation_results() %>% 
-      #   purrr::pluck(.,"datim") %>%
-      #   purrr::pluck(.,"vr_rules_check")
+      mer_data <- validation_results() %>% 
+        purrr::pluck(.,"data") %>% 
+        purrr::pluck(.,"MER")
+
+      subnat_impatt <- validation_results() %>% 
+                purrr::pluck(.,"data") %>% 
+                purrr::pluck(.,"SUBNAT_IMPATT")
+                                            
+      download_data<-dplyr::bind_rows(mer_data,subnat_impatt)
+    
       datapack_name <-
         validation_results() %>% 
         purrr::pluck(.,"info") %>%
-        purrr::pluck(.,"datapack_name")
+        purrr::pluck(.,"country_uids") %>% 
+        getCountryNameFromUID().
       
       flog.info(
         paste0("Flatpack requested for ", datapack_name) 
@@ -270,7 +247,6 @@ shinyServer(function(input, output, session) {
         name = "datapack"
       )
       
-      download_data$validation_rules <- vr_rules
       openxlsx::write.xlsx(download_data, file = file)
       
     }
