@@ -154,7 +154,7 @@ shinyServer(function(input, output, session) {
   
   validation_results <- reactive({ validate() })
   
-   output$indicator_summary<-renderDataTable({
+   output$indicator_summary<-DT::renderDataTable({
    
      vr<-validation_results()
    
