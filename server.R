@@ -81,9 +81,8 @@ shinyServer(function(input, output, session) {
             id = "main-panel",
             type = "tabs",
             tabPanel("Messages", tags$ul(uiOutput('messages'))),
-            # tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
-             tabPanel("HTS Modality Summary", plotOutput("modality_summary"))#,
-            # tabPanel("Validation rules", dataTableOutput("vr_rules"))
+            tabPanel("Indicator summary", dataTableOutput("indicator_summary"))
+
           ))
         ))
   }
@@ -130,7 +129,7 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       if (!inherits(d,"error") & !is.null(d)) {
-        flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
+        flog.info(paste0("Initiating validation of ",d$info$country_uids, " DataPack."), name="datapack")
        d <- filterZeros(d)
        # incProgress(0.1, detail = ("Checking validation rules"))
        # d <- validatePSNUData(d)
@@ -172,48 +171,7 @@ shinyServer(function(input, output, session) {
      }
    })
    
-  # output$modality_summary <- renderPlot({
-  # 
-  #   vr<-validation_results()
-  # 
-  #   if (!inherits(vr,"error") & !is.null(vr)){
-  #     vr  %>%
-  #       purrr::pluck(.,"data") %>%
-  #       purrr::pluck(.,"MER") %>%
-  #       modalitySummaryChart()
-  # 
-  #   } else {
-  #     NULL
-  #   }
-  # 
-  # },height = 400,width = 600)
-  # 
-  # output$vr_rules <- renderDataTable({
-  # 
-  #   vr<-validation_results()
-  # 
-  #   if ( is.null(vr)) {
-  #     return(NULL)
-  #   }
-  # 
-  #   if (!inherits(vr,"error")  & !is.null(vr)){
-  # 
-  #      vr_results <- vr %>%
-  #       purrr::pluck(.,"datim") %>%
-  #       purrr::pluck(.,"vr_rules_check")
-  # 
-  #   }  else {
-  #     return(NULL)
-  #   }
-  #    
-  #   if (NROW(vr_results) == 0 ) {
-  #     return(data.frame(message="Congratulations! No validation rule issues found!"))
-  #   }
-  #   
-  # vr_results
-  #   
-  # })
-  
+
   output$downloadFlatPack <- downloadHandler(
     filename = function() {
       
@@ -239,7 +197,7 @@ shinyServer(function(input, output, session) {
         validation_results() %>% 
         purrr::pluck(.,"info") %>%
         purrr::pluck(.,"country_uids") %>% 
-        getCountryNameFromUID().
+        getCountryNameFromUID()
       
       flog.info(
         paste0("Flatpack requested for ", datapack_name) 
