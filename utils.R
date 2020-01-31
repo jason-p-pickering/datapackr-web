@@ -3,10 +3,12 @@ require(scales)
 require(futile.logger)
 require(DT)
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
-options("baseurl" = "https://www.datim.org/")
-logger <- flog.logger()
-flog.appender(appender.file("/var/log/datapack/datapack.log"), name="datapack")
 
+logger <- flog.logger()
+config <- config::get()
+
+options("baseurl" = config$baseurl)
+flog.appender(appender.file(config$log_path), name="datapack")
 
 DHISLogin <- function(baseurl, username, password) {
   httr::set_config(httr::config(http_version = 0))

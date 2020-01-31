@@ -1,0 +1,3 @@
+default:
+  baseurl: "https://www.datim.org/"
+  log_path: "/var/log/datapack/datapack.log"
