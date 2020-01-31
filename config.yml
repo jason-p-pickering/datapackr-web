@@ -1,3 +1,7 @@
 default:
   baseurl: "https://www.datim.org/"
   log_path: "/var/log/datapack/datapack.log"
+
+dev: 
+  baseurl: "https://test-mer2.datim.org/"
+  log_path: "/Users/sam/var/log/datapack/datapack.log"
