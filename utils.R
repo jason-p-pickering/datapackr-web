@@ -2,6 +2,7 @@ require(datapackr)
 require(scales)
 require(futile.logger)
 require(DT)
+require(config)
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
 
 logger <- flog.logger()
