@@ -3,10 +3,16 @@ require(scales)
 require(futile.logger)
 require(DT)
 require(config)
+require(paws)
+
+#Set the maximum file size for the upload file
 options(shiny.maxRequestSize = 100 * 1024 ^ 2)
 
+#Initiate logging
 logger <- flog.logger()
+#Load the local config file
 config <- config::get()
+Sys.setenv(AWS_REGION = config$aws_region)
 
 options("baseurl" = config$baseurl)
 flog.appender(appender.file(config$log_path), name="datapack")
@@ -40,8 +46,8 @@ filterZeros <- function(d) {
 validatePSNUData <- function(d) {
   #Validation rule checking
   vr_data <- d$datim$PSNUxIM %>%
-  dplyr::mutate(value = datapackr::round_trunc(value)) %>%
-  dplyr::filter(value != 0)
+    dplyr::mutate(value = datapackr::round_trunc(value)) %>%
+    dplyr::filter(value != 0)
   
   
   round_trunc <- function(x) {
@@ -72,7 +78,7 @@ validatePSNUData <- function(d) {
   vr_violations <- datimvalidation::validateData(vr_data,
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
-
+  
   rules_to_keep <- c(
     "L76D9NGEPRS",
     "rVVZmdG1KTb",
@@ -97,7 +103,7 @@ validatePSNUData <- function(d) {
       vr_violations[vr_violations$id %in% rules_to_keep,] } else {
         d$datim$vr_rules_check <- NULL
         return(d)
-    }
+      }
   
   diff <- gsub(" <= ", "/", vr_violations$formula)
   vr_violations$diff <-
@@ -106,7 +112,7 @@ validatePSNUData <- function(d) {
     })
   
   vr_violations %<>% dplyr::filter(diff >= 5) 
-   
+  
   if (NROW(vr_violations) > 0) {
     d$datim$vr_rules_check <- vr_violations  %>%
       dplyr::select(name, ou_name, mech_code, formula, diff) %>%
@@ -132,7 +138,7 @@ validatePSNUData <- function(d) {
     )
     return(d)
   }
- 
+  
   d
   
 }
@@ -194,64 +200,64 @@ adornMechanisms <- function(d) {
   
   mechs<-getMechanismView()
   dplyr::left_join( d , mechs, by = "mechanismCode" )
-
+  
 }
 
 getCOGSMap<-function(uid) {
   
   r<-paste0(getOption("baseurl"),"api/categoryOptionGroupSets/",uid,
-  "?fields=id,name,categoryOptionGroups[id,name,categoryOptions[id,name,categoryOptionCombos[id,name]]") %>%
-  URLencode(.) %>%
+            "?fields=id,name,categoryOptionGroups[id,name,categoryOptions[id,name,categoryOptionCombos[id,name]]") %>%
+    URLencode(.) %>%
     httr::GET(.) %>%
     httr::content(.,"text") %>%
     jsonlite::fromJSON(.,flatten = TRUE) 
   
- dim_name<- r$name
- dim_id<- r$id
- 
- cogs <- r %>% purrr::pluck(.,"categoryOptionGroups") %>% dplyr::select(id,name)
- 
- cogs_cocs_map<-list()
- 
- for (i in 1:NROW(cogs) ) {
-   
-   cos_cocs <- r %>%
-     purrr::pluck(.,"categoryOptionGroups") %>% 
-     purrr::pluck(.,"categoryOptions") %>%
-     purrr::pluck(., i) %>% 
-     purrr::pluck(.,"categoryOptionCombos") %>%
-     do.call(rbind.data.frame,.) %>%
-     dplyr::distinct() %>%
-     dplyr::select("category_option_combo"=name,"coc_uid"=id)
-   
-   cos_cocs$category_option_group_name<-cogs[i,"name"]
-   cos_cocs$category_option_group_uid<-cogs[i,"id"]
-   cogs_cocs_map<-rlist::list.append(cogs_cocs_map,cos_cocs)
- }
- 
- cogs_cocs_map %<>% do.call(rbind.data.frame,.)
- 
- return(list(dimension_name=r$name,
-             dimension_id=r$id,
-             dimension_map= cogs_cocs_map))
-
+  dim_name<- r$name
+  dim_id<- r$id
+  
+  cogs <- r %>% purrr::pluck(.,"categoryOptionGroups") %>% dplyr::select(id,name)
+  
+  cogs_cocs_map<-list()
+  
+  for (i in 1:NROW(cogs) ) {
+    
+    cos_cocs <- r %>%
+      purrr::pluck(.,"categoryOptionGroups") %>% 
+      purrr::pluck(.,"categoryOptions") %>%
+      purrr::pluck(., i) %>% 
+      purrr::pluck(.,"categoryOptionCombos") %>%
+      do.call(rbind.data.frame,.) %>%
+      dplyr::distinct() %>%
+      dplyr::select("category_option_combo"=name,"coc_uid"=id)
+    
+    cos_cocs$category_option_group_name<-cogs[i,"name"]
+    cos_cocs$category_option_group_uid<-cogs[i,"id"]
+    cogs_cocs_map<-rlist::list.append(cogs_cocs_map,cos_cocs)
+  }
+  
+  cogs_cocs_map %<>% do.call(rbind.data.frame,.)
+  
+  return(list(dimension_name=r$name,
+              dimension_id=r$id,
+              dimension_map= cogs_cocs_map))
+  
 }
 
 getDEGSMap <- function(uid) {
   
-    r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]&paging=false") %>%
-      URLencode(.) %>%
-      httr::GET(.) %>%
-      httr::content(.,"text") %>%
-      jsonlite::fromJSON(.,flatten = TRUE) 
+  r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]&paging=false") %>%
+    URLencode(.) %>%
+    httr::GET(.) %>%
+    httr::content(.,"text") %>%
+    jsonlite::fromJSON(.,flatten = TRUE) 
   
-   r %>%
+  r %>%
     purrr::pluck(.,"dataElementGroups") %>% 
     dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
     tidyr::unnest() %>%
     dplyr::distinct() %>%
     dplyr::mutate(type=make.names(r$name))
-
+  
 }
 
 generateMechanismMap<-function() {
@@ -272,7 +278,7 @@ generateMechanismMap<-function() {
     unlist(.)
   
   mechs %<>% dplyr::filter(mech_has_ou) 
-    
+  
   mechs$startdate <-
     as.Date(sapply(mechs$categoryOptions, function(x)
       ifelse(is.null(x$startDate), "1900-01-01", x$startDate)),
@@ -282,7 +288,7 @@ generateMechanismMap<-function() {
       ifelse(is.null(x$endDate), "1900-01-01", x$endDate)),
       "%Y-%m-%d")
   
-
+  
   mechs_ous<- mechs %>% 
     purrr::pluck(.,"categoryOptions") %>%
     purrr::map(.,"organisationUnits") %>%
@@ -290,7 +296,7 @@ generateMechanismMap<-function() {
     dplyr::select("operating_unit"=name,
                   "operating_unit_uid"=id)
   
-   mechs %>% dplyr::select(-categoryOptions) %>%
+  mechs %>% dplyr::select(-categoryOptions) %>%
     dplyr::bind_cols(.,mechs_ous)
   
   
@@ -309,34 +315,34 @@ adornMERData <- function(df) {
     dplyr::mutate(resultstatus = stringr::str_replace(resultstatus,"\\(Specific\\)","")) %>%
     dplyr::mutate(resultstatus = stringr::str_replace(resultstatus,"HIV","")) %>%
     dplyr::mutate(resultstatus = stringr::str_trim(resultstatus))
-    
+  
   
   hiv_inclusive<-getCOGSMap("ipBFu42t2sJ") %>% # HIV Test Status (Inclusive)
-  purrr::pluck("dimension_map") %>%
+    purrr::pluck("dimension_map") %>%
     dplyr::select("categoryoptioncombouid"=coc_uid,
                   "resultstatus_inclusive"=category_option_group_name) %>%
-  dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"\\(Inclusive\\)","")) %>%
+    dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"\\(Inclusive\\)","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"HIV","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
-
-   df %<>% dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
-                     dplyr::filter(dataset == "MER") %>%
-                     dplyr::select(-sheet_name, -typeOptions, -dataset),
-                   by = c("indicatorCode" = "indicatorCode",
-                          "Age" = "validAges",
-                          "Sex" = "validSexes",
-                          "KeyPop" = "validKPs")) %>%
-     dplyr::filter(!is.na(dataelementuid) & !is.na(categoryoptioncombouid))
- 
-   #Join category option group sets
-   df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
-     dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
-   
-   #Data element group set dimension adornment  
+  
+  df %<>% dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
+                             dplyr::filter(dataset == "MER") %>%
+                             dplyr::select(-sheet_name, -typeOptions, -dataset),
+                           by = c("indicatorCode" = "indicatorCode",
+                                  "Age" = "validAges",
+                                  "Sex" = "validSexes",
+                                  "KeyPop" = "validKPs")) %>%
+    dplyr::filter(!is.na(dataelementuid) & !is.na(categoryoptioncombouid))
+  
+  #Join category option group sets
+  df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
+    dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
+  
+  #Data element group set dimension adornment  
   cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
   
-   if ( file.access(cached_degs,4) == 0 ) {
+  if ( file.access(cached_degs,4) == 0 ) {
     degs_map <-readRDS(cached_degs)
   } else {
     
@@ -346,37 +352,37 @@ adornMERData <- function(df) {
         "LxhLO68FcXm",
         "TWXpUVE2MqL",
         "Jm6OwL9IqEa")
-  
-      degs_map <- purrr::map_dfr(data_element_dims,getDEGSMap) %>% 
+    
+    degs_map <- purrr::map_dfr(data_element_dims,getDEGSMap) %>% 
       tidyr::spread(type,name,fill=NA) 
-      #Remapping of column names
-      from<-c("dataElements",
-              "Disaggregation.Type", 
-              "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
-              "Numerator...Denominator",
-              "Support.Type",
-              "Technical.Area")
-      
-      to<-c("dataElements",
-            "disagg_type",
-            "hts_modality",
-            "numerator_denominator",
-            "support_type",
-            "technical_area")
-      
-      names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
+    #Remapping of column names
+    from<-c("dataElements",
+            "Disaggregation.Type", 
+            "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
+            "Numerator...Denominator",
+            "Support.Type",
+            "Technical.Area")
+    
+    to<-c("dataElements",
+          "disagg_type",
+          "hts_modality",
+          "numerator_denominator",
+          "support_type",
+          "technical_area")
+    
+    names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
   
   df %>% 
     dplyr::left_join( degs_map, by = c("dataelementuid" = "dataElements")) %>%
     dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
-
-
-}
   
-modalitySummaryChart <- function(df) {
+  
+}
 
-   df %>% 
+modalitySummaryChart <- function(df) {
+  
+  df %>% 
     dplyr::filter(!is.na(hts_modality)) %>%
     dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
     dplyr::summarise(value = sum(value)) %>%
@@ -403,12 +409,12 @@ modalitySummaryChart <- function(df) {
           panel.background = element_blank(),
           panel.grid.major.x = element_line(color = "#595959"),
           panel.grid.minor.y = element_blank())
-
+  
 }
 
 getCountryNameFromUID<-function(uid) {
   
-   
+  
   paste0(getOption("baseurl"),"api/organisationUnits/",uid,"?fields=shortName") %>%
     URLencode(.) %>%
     httr::GET(.) %>%

@@ -1,7 +1,11 @@
 default:
   baseurl: "https://www.datim.org/"
   log_path: "/var/log/datapack/datapack.log"
+  aws_region: "us-east-2"
+  s3_bucket: "sandbox.pepfar.data.datapack"
 
 dev: 
   baseurl: "https://test-mer2.datim.org/"
   log_path: "/Users/sam/var/log/datapack/datapack.log"
+  aws_region: "us-east-2"
+  s3_bucket: "sandbox.pepfar.data.datapack"
