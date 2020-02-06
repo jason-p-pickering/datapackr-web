@@ -6,6 +6,7 @@ require(dplyr)
 require(datimvalidation)
 require(ggplot2)
 require(futile.logger)
+require(paws)
 
 source("./utils.R")
 
@@ -30,7 +31,54 @@ shinyServer(function(input, output, session) {
     shinyjs::enable("file1")
     shinyjs::hide("validate")
     shinyjs::hide("downloadFlatPack")
+    shinyjs::hide("send_paw")
     ready$ok<-FALSE
+  })
+  
+  observeEvent(input$send_paw, {
+    vr <- validation_results()
+    
+    #Write the flatpacked output
+    tmp <- tempfile()
+    write.table(
+      vr$data$MER,
+      file = tmp,
+      quote = FALSE,
+      sep = "|",
+      row.names = FALSE,
+      na = "",
+      fileEncoding = "UTF-8"
+    )
+    #TODO: Add tagging here for at least the country name
+    tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
+    object_tags<-vr$info[names(vr$info) %in% tags] 
+    object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
+    object_name<-paste0("processed/",vr$info$country_uids,".csv")
+    s3<-paws::s3()
+    
+    tryCatch({
+      foo<-s3$put_object(Bucket = config$s3_bucket,
+                         Body = tmp,
+                         Key = object_name,
+                         Tagging = object_tags)
+      flog.info("Flatpack sent to AP", name = "datapack")
+      showModal(
+        modalDialog(
+          "The DataPack has been delivered to PAW.",
+          easyClose = TRUE,
+          footer = NULL
+        )
+      )
+      shinyjs::disable("send_paw")
+    },
+    error = function(err) {
+      flog.info("Flatpack cannot be sent to AP",name = "datapack")
+      flog.info(err, name = "datapack")
+      showModal(modalDialog(title = "Error",
+                            "The DataPack cannot be delivered to PAW."))
+    })
+    
+    unlink(tmp)
   })
   
   observeEvent(input$login_button, {
@@ -75,14 +123,15 @@ shinyServer(function(input, output, session) {
             actionButton("validate","Validate"),
             actionButton("reset_input", "Reset inputs"),
             tags$hr(),
-            downloadButton("downloadFlatPack", "Download FlatPacked DataPack")
+            downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
+            actionButton("send_paw", "Send to PAW")
           ),
           mainPanel(tabsetPanel(
             id = "main-panel",
             type = "tabs",
             tabPanel("Messages", tags$ul(uiOutput('messages'))),
             tabPanel("Indicator summary", dataTableOutput("indicator_summary"))
-
+            
           ))
         ))
   }
@@ -108,9 +157,10 @@ shinyServer(function(input, output, session) {
   validate<-function() {
     
     shinyjs::hide("downloadFlatPack")
+    shinyjs::hide("send_paw")
     
     if (!ready$ok) {return(NULL)}
-  
+    
     inFile <- input$file1
     messages<-""
     
@@ -129,54 +179,77 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       if (!inherits(d,"error") & !is.null(d)) {
-        flog.info(paste0("Initiating validation of ",d$info$country_uids, " DataPack."), name="datapack")
-       d <- filterZeros(d)
-       # incProgress(0.1, detail = ("Checking validation rules"))
-       # d <- validatePSNUData(d)
-      #  incProgress(0.1,detail="Validating mechanisms")
-      #  d <- validateMechanisms(d)
-      #  incProgress(0.1, detail = ("Making mechanisms prettier"))
-      #  d$data$distributedMER %<>% adornMechanisms()
-      #  d$data$SNUxIM %<>% adornMechanisms()
-      #  Sys.sleep(0.5)
-      #  incProgress(0.1, detail = ("Running dimensional transformation"))
-      # d$data$MER %<>% adornMERData()
-      #  d$data$distributedMER  %<>%  adornMERData()
-      #  Sys.sleep(0.5)
+        flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
+        d <- filterZeros(d)
+        # incProgress(0.1, detail = ("Checking validation rules"))
+        # d <- validatePSNUData(d)
+        #  incProgress(0.1,detail="Validating mechanisms")
+        #  d <- validateMechanisms(d)
+        #  incProgress(0.1, detail = ("Making mechanisms prettier"))
+        #  d$data$distributedMER %<>% adornMechanisms()
+        #  d$data$SNUxIM %<>% adornMechanisms()
+        #  Sys.sleep(0.5)
+        #  incProgress(0.1, detail = ("Running dimensional transformation"))
+        # d$data$MER %<>% adornMERData()
+        #  d$data$distributedMER  %<>%  adornMERData()
+        #  Sys.sleep(0.5)
+        
+        incProgress(0.1, detail = ("Saving an archive copy of your submission"))
+        #Write an archived copy of the file
+        s3<-paws::s3()
+        tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
+        object_tags<-d$info[names(d$info) %in% tags] 
+        object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
+        object_name<-paste0("datapack_archives/",d$info$country_uids,"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
+        tryCatch({
+          foo<-s3$put_object(Bucket = config$s3_bucket,
+                             Body = inFile$datapath,
+                             Key = object_name,
+                             Tagging = object_tags)
+          flog.info("Datapack Archive sent to S3", name = "datapack")
+        },
+        error = function(err) {
+          flog.info("Datapack could not be archived",name = "datapack")
+          flog.info(err, name = "datapack")
+          showModal(modalDialog(title = "Error",
+                                "The DataPack could not be archived."))
+        })
         
         shinyjs::show("downloadFlatPack")
+        shinyjs::show("send_paw")
+        shinyjs::enable("send_paw")
       }
     })
-
+    
     return(d)
     
   }
   
   validation_results <- reactive({ validate() })
   
-   output$indicator_summary<-DT::renderDataTable({
-   
-     vr<-validation_results()
-   
-     if (!inherits(vr,"error") & !is.null(vr)){
-       vr  %>%
-         purrr::pluck(.,"data") %>%
-         purrr::pluck(.,"MER") %>%
-         dplyr::group_by(indicator_code) %>%
-         dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
-         dplyr::arrange(indicator_code)
+  output$indicator_summary<-DT::renderDataTable({
     
-      } else {
-       NULL
-     }
-   })
-   
-
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      vr  %>%
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"MER") %>%
+        dplyr::group_by(indicator_code) %>%
+        dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
+        dplyr::arrange(indicator_code)
+      
+    } else {
+      NULL
+    }
+  })
+  
+  
   output$downloadFlatPack <- downloadHandler(
     filename = function() {
       
       prefix <- "flatpack"
-    
+      
       date<-format(Sys.time(),"%Y%m%d_%H%M%S")
       
       paste0(paste(prefix,date,sep="_"),".xlsx")
@@ -186,13 +259,13 @@ shinyServer(function(input, output, session) {
       mer_data <- validation_results() %>% 
         purrr::pluck(.,"data") %>% 
         purrr::pluck(.,"MER")
-
+      
       subnat_impatt <- validation_results() %>% 
-                purrr::pluck(.,"data") %>% 
-                purrr::pluck(.,"SUBNAT_IMPATT")
-                                            
+        purrr::pluck(.,"data") %>% 
+        purrr::pluck(.,"SUBNAT_IMPATT")
+      
       download_data<-dplyr::bind_rows(mer_data,subnat_impatt)
-    
+      
       datapack_name <-
         validation_results() %>% 
         purrr::pluck(.,"info") %>%
@@ -208,8 +281,8 @@ shinyServer(function(input, output, session) {
       openxlsx::write.xlsx(download_data, file = file)
       
     }
-    )
-
+  )
+  
   
   output$messages <- renderUI({
     
@@ -238,4 +311,4 @@ shinyServer(function(input, output, session) {
       }
     }
   })
-})
+  })
