@@ -49,12 +49,18 @@ shinyServer(function(input, output, session) {
       na = "",
       fileEncoding = "UTF-8"
     )
-    
+    #TODO: Add tagging here for at least the country name
+    tags<-c("tool","country_uids","cop_year","has_error","datapack_name")
+    foo<-vr$info[names(vr$info) %in% tags]
+    object_tags<-paste(names(foo),foo,sep="=",collapse="&")
     object_name<-paste0("datapack_",format(Sys.time(), "%M%d%Y_%H%m%s"),".csv")
     s3<-paws::s3()
     
     tryCatch({
-      foo<-s3$put_object(Bucket = config$s3_bucket,Body = tmp,Key = object_name)
+      foo<-s3$put_object(Bucket = config$s3_bucket,
+                         Body = tmp,
+                         Key = object_name,
+                         Tagging = object_tags)
       flog.info("Flatpack sent to AP", name = "datapack")
       showModal(
         modalDialog(
