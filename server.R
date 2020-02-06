@@ -38,8 +38,13 @@ shinyServer(function(input, output, session) {
   observeEvent(input$send_paw, {
     vr <- validation_results()
     
+<<<<<<< HEAD
     #Write the flatpacked output
     tmp <- tempfile()
+=======
+    tmp <- tempfile()
+    
+>>>>>>> 213bb6b68f47b489b585260c9f9923c743027a60
     write.table(
       vr$data$MER,
       file = tmp,
@@ -50,10 +55,17 @@ shinyServer(function(input, output, session) {
       fileEncoding = "UTF-8"
     )
     #TODO: Add tagging here for at least the country name
+<<<<<<< HEAD
     tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
     object_tags<-vr$info[names(vr$info) %in% tags] 
     object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
     object_name<-paste0("processed/",vr$info$country_uids,".csv")
+=======
+    tags<-c("tool","country_uids","cop_year","has_error","datapack_name")
+    foo<-vr$info[names(vr$info) %in% tags]
+    object_tags<-paste(names(foo),foo,sep="=",collapse="&")
+    object_name<-paste0("datapack_",format(Sys.time(), "%M%d%Y_%H%m%s"),".csv")
+>>>>>>> 213bb6b68f47b489b585260c9f9923c743027a60
     s3<-paws::s3()
     
     tryCatch({
@@ -134,8 +146,8 @@ shinyServer(function(input, output, session) {
             
           ))
         ))
-  }
-})
+    }
+  })
   
   user_input <- reactiveValues(authenticated = FALSE, status = "")
   
@@ -179,7 +191,11 @@ shinyServer(function(input, output, session) {
           return(e)
         })
       if (!inherits(d,"error") & !is.null(d)) {
+<<<<<<< HEAD
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
+=======
+        flog.info(paste0("Initiating validation of ",d$info$country_uids, " DataPack."), name="datapack")
+>>>>>>> 213bb6b68f47b489b585260c9f9923c743027a60
         d <- filterZeros(d)
         # incProgress(0.1, detail = ("Checking validation rules"))
         # d <- validatePSNUData(d)
@@ -193,6 +209,7 @@ shinyServer(function(input, output, session) {
         # d$data$MER %<>% adornMERData()
         #  d$data$distributedMER  %<>%  adornMERData()
         #  Sys.sleep(0.5)
+<<<<<<< HEAD
         
         incProgress(0.1, detail = ("Saving an archive copy of your submission"))
         #Write an archived copy of the file
@@ -214,6 +231,8 @@ shinyServer(function(input, output, session) {
           showModal(modalDialog(title = "Error",
                                 "The DataPack could not be archived."))
         })
+=======
+>>>>>>> 213bb6b68f47b489b585260c9f9923c743027a60
         
         shinyjs::show("downloadFlatPack")
         shinyjs::show("send_paw")
