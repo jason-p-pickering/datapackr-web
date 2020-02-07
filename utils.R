@@ -518,7 +518,8 @@ sendMERDataToPAW<-function(vr,config) {
     foo<-s3$put_object(Bucket = config$s3_bucket,
                        Body = tmp,
                        Key = object_name,
-                       Tagging = object_tags)
+                       Tagging = object_tags,
+                       ContentType = "text/csv")
     flog.info("Flatpack sent to AP", name = "datapack")
     showModal(
       modalDialog(
@@ -539,7 +540,7 @@ sendMERDataToPAW<-function(vr,config) {
   unlink(tmp)
 }
 
-validationSummary<-function(vr) {
+validationSummary<-function(vr,config) {
   
   
   sheets_out_of_order<-sum(vr$tests$sheets_check == FALSE)
@@ -581,9 +582,10 @@ validationSummary<-function(vr) {
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
-                       Body = tmp,
+                       Body = raw_file,
                        Key = object_name,
-                       Tagging = object_tags)
+                       Tagging = object_tags,
+                       ContentType = "text/csv")
     flog.info("Validation summary sent to AP", name = "datapack")
   },
   error = function(err) {

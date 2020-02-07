@@ -157,7 +157,7 @@ shinyServer(function(input, output, session) {
         incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
         archiveDataPacktoS3(d,inFile$datapath,config)
         incProgress(0.1, detail = ("Sendind validation summary."))
-        validationSummary(d)
+        validationSummary(d,config)
         shinyjs::show("downloadFlatPack")
         shinyjs::show("send_paw")
         shinyjs::enable("send_paw")
