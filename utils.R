@@ -475,7 +475,7 @@ archiveDataPacktoS3<-function(d,datapath,config)
   read_file <- file(tmp, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
   
-  object_name<-paste0("timestamp_log/",d$info$country_uids,".csv")
+  object_name<-paste0("upload_timestamp/",d$info$country_uids,".csv")
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
