@@ -424,8 +424,7 @@ getCountryNameFromUID<-function(uid) {
 }
 
 
-archiveDataPacktoS3<-function(d,datapath,config)
-{
+archiveDataPacktoS3<-function(d,datapath,config) {
  
   #Write an archived copy of the file
   s3<-paws::s3()
@@ -495,7 +494,6 @@ archiveDataPacktoS3<-function(d,datapath,config)
   unlink(tmp)
 }
 
-
 sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
@@ -539,4 +537,63 @@ sendMERDataToPAW<-function(vr,config) {
   })
   
   unlink(tmp)
+}
+
+validationSummary<-function(vr) {
+  
+  
+  sheets_out_of_order<-sum(vr$tests$sheets_check == FALSE)
+  
+  columns_out_of_order<-purrr::map(vr$tests$col_check,function(x) purrr::pluck(x,"order_check")) %>% 
+    purrr::map(.,function(x) !x) %>% 
+    purrr::map(.,function(x) sum(x)) %>% 
+    tibble::enframe() %>% 
+    tidyr::unnest(cols=c(value)) %>% 
+    dplyr::filter(value != 0) %>% 
+    NROW(.)
+  non_numeric<-length(vr$tests$non_numeric)
+  
+  validation_summary<-tibble::tribble(~type, ~count,
+                  "Non-numeric values", non_numeric,
+                  "Sheets out of order", sheets_out_of_order,
+                  "Sheets with columns out of order", columns_out_of_order )
+  
+  tmp <- tempfile()
+  #Need better error checking here I think. 
+  write.table(
+    validation_summary,
+    file = tmp,
+    quote = FALSE,
+    sep = "|",
+    row.names = FALSE,
+    na = "",
+    fileEncoding = "UTF-8"
+  )
+  # Load the file as a raw binary
+  read_file <- file(tmp, "rb")
+  raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  
+  tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
+  object_tags<-vr$info[names(vr$info) %in% tags] 
+  object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
+  object_name<-paste0("validations/",vr$info$country_uids,".csv")
+  s3<-paws::s3()
+  
+  tryCatch({
+    foo<-s3$put_object(Bucket = config$s3_bucket,
+                       Body = tmp,
+                       Key = object_name,
+                       Tagging = object_tags)
+    flog.info("Validation summary sent to AP", name = "datapack")
+  },
+  error = function(err) {
+    flog.info("Validation summary could not be sent to AP",name = "datapack")
+    flog.info(err, name = "datapack")
+    showModal(modalDialog(title = "Error",
+                          "Validation summary could not be sent to AP."))
+  })
+  
+  unlink(tmp)
+  
+  
 }
