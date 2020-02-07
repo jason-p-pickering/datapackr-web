@@ -471,6 +471,10 @@ archiveDataPacktoS3<-function(d,datapath,config)
     na = "",
     fileEncoding = "UTF-8"
   )
+  # Load the file as a raw binary
+  read_file <- file(tmp, "rb")
+  raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  
   object_name<-paste0("timestamp_log/",d$info$country_uids,".csv")
   
   tryCatch({
