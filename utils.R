@@ -478,7 +478,7 @@ archiveDataPacktoS3<-function(d,datapath,config)
                        Body = tmp,
                        Key = object_name,
                        Tagging = object_tags,
-                       ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                       ContentType = "text/csv")
     flog.info("Timestamp log sent to S3", name = "datapack")
     
   },
