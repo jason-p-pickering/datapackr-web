@@ -38,49 +38,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$send_paw, {
     vr <- validation_results()
     
-    #Write the flatpacked output
-    tmp <- tempfile()
-    #Need better error checking here I think. 
-    write.table(
-      vr$data$MER,
-      file = tmp,
-      quote = FALSE,
-      sep = "|",
-      row.names = FALSE,
-      na = "",
-      fileEncoding = "UTF-8"
-    )
-    
-    #TODO: Functionalize this
-    tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
-    object_tags<-vr$info[names(vr$info) %in% tags] 
-    object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-    object_name<-paste0("processed/",vr$info$country_uids,".csv")
-    s3<-paws::s3()
-    
-    tryCatch({
-      foo<-s3$put_object(Bucket = config$s3_bucket,
-                         Body = tmp,
-                         Key = object_name,
-                         Tagging = object_tags)
-      flog.info("Flatpack sent to AP", name = "datapack")
-      showModal(
-        modalDialog(
-          "The DataPack has been delivered to PAW.",
-          easyClose = TRUE,
-          footer = NULL
-        )
-      )
-      shinyjs::disable("send_paw")
-    },
-    error = function(err) {
-      flog.info("Flatpack cannot be sent to AP",name = "datapack")
-      flog.info(err, name = "datapack")
-      showModal(modalDialog(title = "Error",
-                            "The DataPack cannot be delivered to PAW."))
-    })
-    
-    unlink(tmp)
+    sendMERDataToPAW(vr,config)
   })
   
   observeEvent(input$login_button, {
@@ -197,32 +155,7 @@ shinyServer(function(input, output, session) {
         #  Sys.sleep(0.5)
         
         incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
-        #Write an archived copy of the file
-        s3<-paws::s3()
-        tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
-        object_tags<-d$info[names(d$info) %in% tags] 
-        object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-        object_name<-paste0("datapack_archives/",d$info$country_uids,"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
-        # Load the file as a raw binary
-        read_file <- file(inFile$datapath, "rb")
-        raw_file <- readBin(read_file, "raw", n = file.size(inFile$datapath))
-        
-        tryCatch({
-          foo<-s3$put_object(Bucket = config$s3_bucket,
-                             Body = raw_file,
-                             Key = object_name,
-                             Tagging = object_tags,
-                             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-          flog.info("Datapack Archive sent to S3", name = "datapack")
-
-        },
-        error = function(err) {
-          flog.info("Datapack could not be archived",name = "datapack")
-          flog.info(err, name = "datapack")
-          showModal(modalDialog(title = "Error",
-                                "The DataPack could not be archived."))
-        })
-        
+        archiveDataPacktoS3(d,inFile$datapath,config)
         shinyjs::show("downloadFlatPack")
         shinyjs::show("send_paw")
         shinyjs::enable("send_paw")
