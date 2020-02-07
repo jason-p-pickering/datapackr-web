@@ -453,6 +453,42 @@ archiveDataPacktoS3<-function(d,datapath,config)
                           "The DataPack could not be archived."))
   })
   
+  #Save a timestamp of the upload
+  timestamp_info<-list(
+    ou=d$info$datapack_name,
+    ou_id=d$info$country_uids,
+    upload_timestamp=strftime(as.POSIXlt(Sys.time(), "UTC", "%Y-%m-%dT%H:%M:%S") , "%Y-%m-%dT%H:%M:%S%z"),
+    filename=object_name
+  )
+  
+  tmp<-tempfile()
+  write.table(
+    as.data.frame(timestamp_info),
+    file = tmp,
+    quote = FALSE,
+    sep = "|",
+    row.names = FALSE,
+    na = "",
+    fileEncoding = "UTF-8"
+  )
+  object_name<-paste0("timestamp_log/",d$info$country_uids,".csv")
+  
+  tryCatch({
+    foo<-s3$put_object(Bucket = config$s3_bucket,
+                       Body = tmp,
+                       Key = object_name,
+                       Tagging = object_tags,
+                       ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    flog.info("Timestamp log sent to S3", name = "datapack")
+    
+  },
+  error = function(err) {
+    flog.info("Timestamp log could not be saved to S3",name = "datapack")
+    flog.info(err, name = "datapack")
+    showModal(modalDialog(title = "Error",
+                          "Timestamp log could not be saved to S3."))
+  })
+  unlink(tmp)
 }
 
 
