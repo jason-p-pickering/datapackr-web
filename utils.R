@@ -479,7 +479,7 @@ archiveDataPacktoS3<-function(d,datapath,config)
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
-                       Body = tmp,
+                       Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "text/csv")
