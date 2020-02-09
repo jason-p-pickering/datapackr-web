@@ -456,7 +456,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   timestamp_info<-list(
     ou=d$info$datapack_name,
     ou_id=d$info$country_uids,
-    upload_timestamp=strftime(as.POSIXlt(Sys.time(), "UTC", "%Y-%m-%dT%H:%M:%S") , "%Y-%m-%dT%H:%M:%S%z"),
+    upload_timestamp=strftime(as.POSIXlt(Sys.time(), "UTC", "%Y-%m-%dT%H:%M:%S") , "%Y-%m-%d %H:%M:%S"),
     filename=object_name
   )
   
