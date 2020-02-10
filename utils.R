@@ -431,7 +431,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-d$info[names(d$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("datapack_archives/",d$info$country_uids[[1]],"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
+  object_name<-paste0("datapack_archives/",d$info$datapack_name,"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
   # Load the file as a raw binary
   read_file <- file(datapath, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(datapath))
@@ -455,7 +455,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   #Save a timestamp of the upload
   timestamp_info<-list(
     ou=d$info$datapack_name,
-    ou_id=d$info$country_uids,
+    ou_id=d$info$country_uids[[1]],
     upload_timestamp=strftime(as.POSIXlt(Sys.time(), "UTC", "%Y-%m-%dT%H:%M:%S") , "%Y-%m-%d %H:%M:%S"),
     filename=object_name
   )
@@ -474,7 +474,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   read_file <- file(tmp, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
   
-  object_name<-paste0("upload_timestamp/",d$info$country_uids,".csv")
+  object_name<-paste0("upload_timestamp/",d$info$country_uids[[1]],".csv")
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
