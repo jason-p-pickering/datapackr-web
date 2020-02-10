@@ -511,6 +511,10 @@ sendMERDataToPAW<-function(vr,config) {
     fileEncoding = "UTF-8"
   )
   
+  # Load the file as a raw binary
+  read_file <- file(tmp, "rb")
+  raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
@@ -519,7 +523,7 @@ sendMERDataToPAW<-function(vr,config) {
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
-                       Body = tmp,
+                       Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "text/csv")
