@@ -154,6 +154,9 @@ shinyServer(function(input, output, session) {
         #  d$data$distributedMER  %<>%  adornMERData()
         #  Sys.sleep(0.5)
         
+        #We do not have a great way of dealing with datapacks with multiple country ids...
+        d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+        
         incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
         archiveDataPacktoS3(d,inFile$datapath,config)
         incProgress(0.1, detail = ("Sendind validation summary."))
