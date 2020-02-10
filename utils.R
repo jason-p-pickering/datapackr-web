@@ -497,9 +497,12 @@ archiveDataPacktoS3<-function(d,datapath,config) {
 sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
+  mer_data<-vr$data$MER %>% 
+    mutate(timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"))
+           
   #Need better error checking here I think. 
   write.table(
-    vr$data$MER,
+    mer_data,
     file = tmp,
     quote = FALSE,
     sep = "|",
