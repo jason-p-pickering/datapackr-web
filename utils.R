@@ -37,36 +37,21 @@ filterZeros <- function(d) {
   #Filter any zeros
   d$data$MER %<>% dplyr::filter( value != 0 )
   d$data$SUBNAT_IMPATT %<>% dplyr::filter( value != 0 )
-  # d$data$SNUxIM %<>% dplyr::filter( distribution != 0 )
-  # d$data$distributedMER %<>% dplyr::filter( value != 0 )
+  d$data$SNUxIM %<>% dplyr::filter( distribution != 0 )
+  d$data$distributedMER %<>% dplyr::filter( value != 0 )
   
   d
 }
 
 validatePSNUData <- function(d) {
-  #Validation rule checking
-  vr_data <- d$datim$PSNUxIM %>%
-    dplyr::mutate(value = datapackr::round_trunc(value)) %>%
-    dplyr::filter(value != 0)
   
-  
-  round_trunc <- function(x) {
-    trunc(abs(x) + 0.5) * sign(x)
-  }
-  
-  names(vr_data) <- c("dataElement",
-                      "period",
-                      "orgUnit",
-                      "categoryOptionCombo",
-                      "attributeOptionCombo",
-                      "value")
-  
+  vr_data<-d$datim$MER
   # We need ALL mechanisms to be in DATIM before remapping....TODO
-  # vr_data$attributeOptionCombo <-
-  #   datimvalidation::remapMechs(vr_data$attributeOptionCombo,
-  #                               getOption("organisationUnit"),
-  #                               "code",
-  #                               "id")
+  vr_data$attributeOptionCombo <-
+    datimvalidation::remapMechs(vr_data$attributeOptionCombo,
+                                getOption("organisationUnit"),
+                                "code",
+                                "id")
   datasets_uid <- c("nIHNMxuPUOR", "sBv1dj90IX6")
   if ( Sys.info()["sysname"] == "Linux") {
     ncores <- parallel::detectCores() - 1
@@ -75,7 +60,7 @@ validatePSNUData <- function(d) {
   } else {
     is_parallel <- FALSE
   } 
-  vr_violations <- datimvalidation::validateData(vr_data,
+  vr_violations <- datimvalidation::validateData(d$datim$MER,
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
   
@@ -146,8 +131,8 @@ validatePSNUData <- function(d) {
 #TODO: Move this back to the DataPackr....
 validateMechanisms<-function(d) {
   
-  vr_data <- d$datim$PSNUxIM %>%
-    dplyr::pull(mechanismCode) %>%
+  vr_data <- d$datim$MER %>%
+    dplyr::pull(attributeOptionCombo) %>%
     unique()
   
   #TODO: Removve hard coding of time periods and 
@@ -155,12 +140,12 @@ validateMechanisms<-function(d) {
   mechs<-getMechanismView() %>%
     dplyr::filter(!is.na(startdate)) %>%
     dplyr::filter(!is.na(enddate)) %>%
-    dplyr::filter(startdate <= as.Date('2019-10-01')) %>%
-    dplyr::filter(enddate >= as.Date('2020-09-30')) %>%
+    dplyr::filter(startdate <= as.Date('2020-10-01')) %>%
+    dplyr::filter(enddate >= as.Date('2021-09-30')) %>%
     dplyr::pull(mechanismCode)
   
   #Allow for dedupe
-  mechs <- append("00000",mechs)
+  #mechs <- append("00000",mechs)
   
   bad_mechs<-vr_data[!(vr_data %in% mechs)]
   
@@ -425,7 +410,7 @@ getCountryNameFromUID<-function(uid) {
 
 
 archiveDataPacktoS3<-function(d,datapath,config) {
- 
+  
   #Write an archived copy of the file
   s3<-paws::s3()
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
@@ -499,7 +484,7 @@ sendMERDataToPAW<-function(vr,config) {
   tmp <- tempfile()
   mer_data<-vr$data$MER %>% 
     mutate(timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"))
-           
+  
   #Need better error checking here I think. 
   write.table(
     mer_data,
@@ -562,9 +547,9 @@ validationSummary<-function(vr,config) {
   non_numeric<-length(vr$tests$non_numeric)
   
   validation_summary<-tibble::tribble(~type, ~count,
-                  "Non-numeric values", non_numeric,
-                  "Sheets out of order", sheets_out_of_order,
-                  "Sheets with columns out of order", columns_out_of_order )
+                                      "Non-numeric values", non_numeric,
+                                      "Sheets out of order", sheets_out_of_order,
+                                      "Sheets with columns out of order", columns_out_of_order )
   
   tmp <- tempfile()
   #Need better error checking here I think. 
