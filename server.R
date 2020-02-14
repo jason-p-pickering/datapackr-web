@@ -1,12 +1,26 @@
-library(shiny)
-library(shinyjs)
-require(magrittr)
-require(purrr)
-require(dplyr)
-require(datimvalidation)
-require(ggplot2)
-require(futile.logger)
-require(paws)
+pacman::p_load(shiny,
+               shinyjs,
+               magrittr,
+               purrr,
+               dplyr,
+               datimvalidation,
+               ggplot2,
+               futile.logger,
+               scales,
+               DT,
+               config)
+# library(shiny)
+# library(shinyjs)
+# require(magrittr)
+# require(dplyr)
+# require(datimvalidation)
+# require(ggplot2)
+# require(futile.logger)
+# require(paws)
+# require(datapackr)
+# require(scales)
+# require(DT)
+# require(config)
 
 source("./utils.R")
 
@@ -91,12 +105,13 @@ shinyServer(function(input, output, session) {
             type = "tabs",
             tabPanel("Messages", tags$ul(uiOutput('messages'))),
             tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
-            tabPanel("Validation rules", dataTableOutput("vr_rules"))
+            tabPanel("Validation rules", dataTableOutput("vr_rules")),
+            tabPanel("HTS Modality Summary", plotOutput("modality_summary"))
             
           ))
         ))
-    }
-  })
+  }
+})
   
   user_input <- reactiveValues(authenticated = FALSE, status = "")
   
@@ -119,6 +134,8 @@ shinyServer(function(input, output, session) {
     
     shinyjs::hide("downloadFlatPack")
     shinyjs::hide("send_paw")
+    shinyjs::hide("vr_rules")
+    shinyjs::hide("modality_summary")
     
     if (!ready$ok) {return(NULL)}
     
@@ -139,32 +156,42 @@ shinyServer(function(input, output, session) {
         error = function(e){
           return(e)
         })
+      
       if (!inherits(d,"error") & !is.null(d)) {
+        
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
-        d <- filterZeros(d)
-        incProgress(0.1, detail = ("Checking validation rules"))
-        d <- validatePSNUData(d)
-        #  incProgress(0.1,detail="Validating mechanisms")
-        #  d <- validateMechanisms(d)
-        #  incProgress(0.1, detail = ("Making mechanisms prettier"))
-        #  d$data$distributedMER %<>% adornMechanisms()
-        #  d$data$SNUxIM %<>% adornMechanisms()
-        #  Sys.sleep(0.5)
-        #  incProgress(0.1, detail = ("Running dimensional transformation"))
-        # d$data$MER %<>% adornMERData()
-        #  d$data$distributedMER  %<>%  adornMERData()
-        #  Sys.sleep(0.5)
         
-        #We do not have a great way of dealing with datapacks with multiple country ids...
-        d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+        if ( d$info$has_psnuxim ) {
+          flog.info("Datapack with PSNUxIM tab found.")
+          incProgress(0.1, detail = ("Checking validation rules"))
+          d <- validatePSNUData(d)
+          incProgress(0.1,detail="Validating mechanisms")
+          d <- validateMechanisms(d)
+          incProgress(0.1, detail = ("Making mechanisms prettier"))
+          d$data$distributedMER %<>% adornMechanisms()
+          Sys.sleep(0.5)
+          incProgress(0.1, detail = ("Running dimensional transformation"))
+          d$data$distributedMER %<>% adornMERData()
+          Sys.sleep(0.5)
+          incProgress(0.1, detail = ("Running spatial transformation"))
+          d$data$distributedMER %<>% adornPSNUs()
+          Sys.sleep(0.5)
+          incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
+          archiveDataPacktoS3(d,inFile$datapath,config)
+          incProgress(0.1, detail = ("Sending validation summary."))
+          validationSummary(d,config)
+          #We do not have a great way of dealing with datapacks with multiple country ids...
+          d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+          
+          shinyjs::show("downloadFlatPack")
+          shinyjs::show("vr_rules")
+          shinyjs::show("modality_summary")
+          shinyjs::show("send_paw")
+          shinyjs::enable("send_paw")
+        }
         
-        incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
-        archiveDataPacktoS3(d,inFile$datapath,config)
-        incProgress(0.1, detail = ("Sendind validation summary."))
-        validationSummary(d,config)
-        shinyjs::show("downloadFlatPack")
-        shinyjs::show("send_paw")
-        shinyjs::enable("send_paw")
+        
+        
       }
     })
     
@@ -174,17 +201,36 @@ shinyServer(function(input, output, session) {
   
   validation_results <- reactive({ validate() })
   
+  
+  output$modality_summary <- renderPlot({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      vr  %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"distributedMER") %>%
+        modalitySummaryChart()
+      
+    } else {
+      NULL
+    }
+    
+  },height = 400,width = 600)
+  
   output$indicator_summary<-DT::renderDataTable({
     
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
+      
       vr  %>%
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"MER") %>%
         dplyr::group_by(indicator_code) %>%
         dplyr::summarise(value = format( round(sum(value)) ,big.mark=',', scientific=FALSE)) %>%
         dplyr::arrange(indicator_code)
+      
       
     } else {
       NULL
@@ -228,6 +274,10 @@ shinyServer(function(input, output, session) {
     },
     content = function(file) {
       
+      #Create a new workbook
+      wb <- openxlsx::createWorkbook()
+      
+      
       mer_data <- validation_results() %>% 
         purrr::pluck(.,"data") %>% 
         purrr::pluck(.,"MER")
@@ -236,7 +286,32 @@ shinyServer(function(input, output, session) {
         purrr::pluck(.,"data") %>% 
         purrr::pluck(.,"SUBNAT_IMPATT")
       
-      download_data<-dplyr::bind_rows(mer_data,subnat_impatt)
+      mer_data<-dplyr::bind_rows(mer_data,subnat_impatt)
+      openxlsx::addWorksheet(wb,"MER Data")
+      openxlsx::writeDataTable(wb = wb,
+                               sheet = "MER Data",x = mer_data)
+      
+      has_psnu<-validation_results() %>% 
+        purrr::pluck(.,"info") %>% 
+        purrr::pluck(.,"has_psnuxim")
+      
+      if (has_psnu) {
+        
+        distributed_mer<- prepareFlatMERExport(validation_results())
+        
+        openxlsx::addWorksheet(wb,"Distributed MER Data")
+        openxlsx::writeDataTable(wb = wb,
+                                 sheet = "Distributed MER Data",x = distributed_mer)
+        
+        validation_rules<- validation_results() %>% 
+          purrr::pluck(.,"datim") %>% 
+          purrr::pluck(.,"vr_rules_check") 
+        
+        openxlsx::addWorksheet(wb,"Validation rules")
+        openxlsx::writeData(wb = wb,
+                            sheet = "Validation rules",x = validation_rules)
+        
+      }
       
       datapack_name <-
         validation_results() %>% 
@@ -250,7 +325,7 @@ shinyServer(function(input, output, session) {
         name = "datapack"
       )
       
-      openxlsx::write.xlsx(download_data, file = file)
+      openxlsx::saveWorkbook(wb,file=file,overwrite = TRUE)
       
     }
   )
@@ -282,4 +357,4 @@ shinyServer(function(input, output, session) {
       }
     }
   })
-})
+  })

@@ -19,7 +19,7 @@ flog.appender(appender.file(config$log_path), name="datapack")
 
 DHISLogin <- function(baseurl, username, password) {
   httr::set_config(httr::config(http_version = 0))
-  url <- URLencode(URL = paste0(getOption("baseurl"), "api/me"))
+  url <- URLencode(URL = paste0(config$baseurl, "api/me"))
   #Logging in here will give us a cookie to reuse
   r <- httr::GET(url,
                  httr::authenticate(username, password),
@@ -34,18 +34,16 @@ DHISLogin <- function(baseurl, username, password) {
 }
 
 filterZeros <- function(d) {
-  #Filter any zeros
-  d$data$MER %<>% dplyr::filter( value != 0 )
-  d$data$SUBNAT_IMPATT %<>% dplyr::filter( value != 0 )
-  d$data$SNUxIM %<>% dplyr::filter( distribution != 0 )
-  d$data$distributedMER %<>% dplyr::filter( value != 0 )
   
+  d$data <- lapply(d$data,function(x) dplyr::filter(x, value != 0 ))
   d
 }
 
 validatePSNUData <- function(d) {
   
   vr_data<-d$datim$MER
+  if (is.null(vr_data) | NROW(vr_data) == 0 ) {return(d)}
+  
   # We need ALL mechanisms to be in DATIM before remapping....TODO
   vr_data$attributeOptionCombo <-
     datimvalidation::remapMechs(vr_data$attributeOptionCombo,
@@ -131,8 +129,10 @@ validatePSNUData <- function(d) {
 #TODO: Move this back to the DataPackr....
 validateMechanisms<-function(d) {
   
-  vr_data <- d$datim$MER %>%
-    dplyr::pull(attributeOptionCombo) %>%
+  
+  if (is.null(d$data$distributedMER)) {return(d)}
+  vr_data <- d$data$distributedMER %>%
+    dplyr::pull(mechanism_code) %>%
     unique()
   
   #TODO: Removve hard coding of time periods and 
@@ -142,7 +142,7 @@ validateMechanisms<-function(d) {
     dplyr::filter(!is.na(enddate)) %>%
     dplyr::filter(startdate <= as.Date('2020-10-01')) %>%
     dplyr::filter(enddate >= as.Date('2021-09-30')) %>%
-    dplyr::pull(mechanismCode)
+    dplyr::pull(mechanism_code)
   
   #Allow for dedupe
   #mechs <- append("00000",mechs)
@@ -154,6 +154,7 @@ validateMechanisms<-function(d) {
     msg <- paste0("ERROR!: Invalid mechanisms found in the PSNUxIM tab. 
                   These MUST be reallocated to a valid mechanism
                   ",paste(bad_mechs,sep="",collapse=","))
+    d$tests$bad_mechs<-bad_mechs
     d$info$warningMsg<-append(msg,d$info$warningMsg)
     d$info$had_error<-TRUE
   }
@@ -162,29 +163,75 @@ validateMechanisms<-function(d) {
   
 }
 
+
 getMechanismView<-function() {
-  cached_mechs <- "/srv/shiny-server/apps/datapack/mechs.rds"
+  
+  cached_mechs <- paste0(config$deploy_location,"mechs.rds")
   
   if ( file.access(cached_mechs,4) == 0 ) {
     
-    mechs <-readRDS(cached_mechs)
+    readRDS(cached_mechs)
     
   } else {
     
-    mechs <- paste0(getOption("baseurl"), "api/sqlViews/fgUtV6e9YIX/data.csv") %>%
+    # mechs<- paste0(getOption("baseurl"),"api/categoryOptionCombos?filter=categoryCombo.id:eq:wUpfppgjEza&fields=code,name,id,categoryOptions[startDate,endDate,organisationUnits[id,name]]&paging=false") %>%
+    #   URLencode(.) %>%
+    #   httr::GET(., httr::timeout(60)) %>%
+    #   httr::content(.,"text") %>%
+    #   jsonlite::fromJSON(., flatten = TRUE) %>%
+    #   purrr::pluck(.,"categoryOptionCombos")
+    # 
+    # mech_has_ou <- mechs %>%
+    #   purrr::pluck(.,"categoryOptions") %>%
+    #   purrr::map(.,"organisationUnits") %>%
+    #   purrr::flatten(.) %>%
+    #   purrr::map(., function(x) { class(x) == "data.frame" }) %>%
+    #   unlist(.)
+    # 
+    # mechs %<>% dplyr::filter(mech_has_ou)
+    # 
+    # mechs$startdate <-
+    #   as.Date(sapply(mechs$categoryOptions, function(x)
+    #     ifelse(is.null(x$startDate), "1900-01-01", x$startDate)),
+    #     "%Y-%m-%d")
+    # mechs$enddate <-
+    #   as.Date(sapply(mechs$categoryOptions, function(x)
+    #     ifelse(is.null(x$endDate), "1900-01-01", x$endDate)),
+    #     "%Y-%m-%d")
+    # 
+    # 
+    # mechs_ous<- mechs %>%
+    #   purrr::pluck(.,"categoryOptions") %>%
+    #   purrr::map(.,"organisationUnits") %>%
+    #   purrr::flatten_dfr(.,.id="foo") %>%
+    #   dplyr::select("operating_unit"=name,
+    #                 "operating_unit_uid"=id)
+    # 
+    # mechs %<>% dplyr::select(-categoryOptions) %>%
+    #   dplyr::bind_cols(.,mechs_ous) %>%
+    #   dplyr::rename(mechanism_code = code)
+    
+    paste0(getOption("baseurl"), "api/sqlViews/fgUtV6e9YIX/data.csv") %>%
       httr::GET() %>%
       httr::content(., "text") %>%
       readr::read_csv(col_names = TRUE) %>%
-      dplyr::select(mechanismCode = "code", partner, agency, ou,startdate,enddate)
+      dplyr::rename(mechanism_desc = mechanism,
+                    attributeOptionCombo = uid,
+                    mechanism_code = code,
+                    partner_desc = partner,
+                    partner_id = primeid)
+    # mechs %<>% dplyr::left_join(mechs_partners,by="mechanism_code")
   }
   
-  mechs
+  
 }
 
 adornMechanisms <- function(d) {
   
-  mechs<-getMechanismView()
-  dplyr::left_join( d , mechs, by = "mechanismCode" )
+  mechs<-getMechanismView() %>% 
+    dplyr::select(-ou,-startdate,-enddate)
+  
+  dplyr::left_join( d , mechs, by = "mechanism_code")
   
 }
 
@@ -239,59 +286,19 @@ getDEGSMap <- function(uid) {
   r %>%
     purrr::pluck(.,"dataElementGroups") %>% 
     dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
-    tidyr::unnest() %>%
+    tidyr::unnest(cols = c(dataElements)) %>%
     dplyr::distinct() %>%
     dplyr::mutate(type=make.names(r$name))
-  
-}
-
-generateMechanismMap<-function() {
-  
-  
-  mechs<- paste0(getOption("baseurl"),"api/categoryOptionCombos?filter=categoryCombo.id:eq:wUpfppgjEza&fields=code,name,id,categoryOptions[startDate,endDate,organisationUnits[id,name]]&paging=false") %>% 
-    URLencode(.) %>%
-    httr::GET(., httr::timeout(60)) %>%
-    httr::content(.,"text") %>%
-    jsonlite::fromJSON(., flatten = TRUE) %>%
-    purrr::pluck(.,"categoryOptionCombos")
-  
-  mech_has_ou <- mechs %>% 
-    purrr::pluck(.,"categoryOptions") %>%
-    purrr::map(.,"organisationUnits") %>%
-    purrr::flatten(.) %>% 
-    purrr::map(., function(x) { class(x) == "data.frame" }) %>%
-    unlist(.)
-  
-  mechs %<>% dplyr::filter(mech_has_ou) 
-  
-  mechs$startdate <-
-    as.Date(sapply(mechs$categoryOptions, function(x)
-      ifelse(is.null(x$startDate), "1900-01-01", x$startDate)),
-      "%Y-%m-%d")
-  mechs$enddate <-
-    as.Date(sapply(mechs$categoryOptions, function(x)
-      ifelse(is.null(x$endDate), "1900-01-01", x$endDate)),
-      "%Y-%m-%d")
-  
-  
-  mechs_ous<- mechs %>% 
-    purrr::pluck(.,"categoryOptions") %>%
-    purrr::map(.,"organisationUnits") %>%
-    purrr::flatten_dfr(.,.id="foo") %>%
-    dplyr::select("operating_unit"=name,
-                  "operating_unit_uid"=id)
-  
-  mechs %>% dplyr::select(-categoryOptions) %>%
-    dplyr::bind_cols(.,mechs_ous)
-  
   
 }
 
 #Used with permission from @achafetz  
 #https://github.com/USAID-OHA-SI/tameDP/blob/master/R/clean_indicators.R
 
-adornMERData <- function(df) {
+adornMERData <- function(df){
   
+  
+  if ( is.null(df) ) { return(NULL) }
   
   hiv_specific<-getCOGSMap("bDWsPYyXgWP") %>% #HIV Test Status (Specific)
     purrr::pluck("dimension_map") %>%
@@ -311,14 +318,11 @@ adornMERData <- function(df) {
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
   
-  df %<>% dplyr::left_join(datapackr::PSNUxIM_to_DATIM %>%
-                             dplyr::filter(dataset == "MER") %>%
-                             dplyr::select(-sheet_name, -typeOptions, -dataset),
-                           by = c("indicatorCode" = "indicatorCode",
-                                  "Age" = "validAges",
-                                  "Sex" = "validSexes",
-                                  "KeyPop" = "validKPs")) %>%
-    dplyr::filter(!is.na(dataelementuid) & !is.na(categoryoptioncombouid))
+  df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
+                                   dplyr::rename(Age = valid_ages.name,
+                                                 Sex = valid_sexes.name,
+                                                 KeyPop = valid_kps.name) )) %>%
+    dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
   
   #Join category option group sets
   df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
@@ -333,34 +337,25 @@ adornMERData <- function(df) {
     
     data_element_dims <-
       c("HWPJnUTMjEq",
-        "lD2x0c8kywj",
-        "LxhLO68FcXm",
-        "TWXpUVE2MqL",
-        "Jm6OwL9IqEa")
+        "LxhLO68FcXm")
     
     degs_map <- purrr::map_dfr(data_element_dims,getDEGSMap) %>% 
       tidyr::spread(type,name,fill=NA) 
     #Remapping of column names
     from<-c("dataElements",
             "Disaggregation.Type", 
-            "HTS.Modality..USE.ONLY.for.FY19.Results.FY20.Targets.",
-            "Numerator...Denominator",
-            "Support.Type",
             "Technical.Area")
     
-    to<-c("dataElements",
+    to<-c("dataelement",
           "disagg_type",
-          "hts_modality",
-          "numerator_denominator",
-          "support_type",
           "technical_area")
     
     names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
   
   df %>% 
-    dplyr::left_join( degs_map, by = c("dataelementuid" = "dataElements")) %>%
-    dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY19R/FY20T$",""))
+    dplyr::left_join( degs_map, by = "dataelement") %>%
+    dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY20R/FY21T$",""))
   
   
 }
@@ -384,7 +379,7 @@ modalitySummaryChart <- function(df) {
     coord_flip() +
     scale_fill_manual(values = c(	"#948d79", "#548dc0", "#59BFB3")) +
     labs(y = "", x = "",
-         title = "COP19/FY20 Testing Targets",
+         title = "COP20/FY21 Testing Targets",
          subtitle = "modalities ordered by total tests") +
     theme(legend.position = "bottom",
           legend.title = element_blank(),
@@ -408,7 +403,6 @@ getCountryNameFromUID<-function(uid) {
     purrr::pluck(.,"shortName")
 }
 
-
 archiveDataPacktoS3<-function(d,datapath,config) {
   
   #Write an archived copy of the file
@@ -420,6 +414,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   # Load the file as a raw binary
   read_file <- file(datapath, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(datapath))
+  close(read_file)
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
@@ -458,6 +453,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   # Load the file as a raw binary
   read_file <- file(tmp, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  close(read_file)
   
   object_name<-paste0("upload_timestamp/",d$info$country_uids,".csv")
   
@@ -479,11 +475,70 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   unlink(tmp)
 }
 
+adornPSNUs<-function(df) {
+  
+  PSNUs <- datapackr::valid_PSNUs %>%
+    dplyr::mutate(
+      ou_id = purrr::map_chr(ancestors, list("id", 3), .default = NA),
+      ou = purrr::map_chr(ancestors, list("name", 3), .default = NA),
+      snu1_id = dplyr::if_else(
+        condition = is.na(purrr::map_chr(ancestors, list("id",4), .default = NA)),
+        true = psnu_uid,
+        false = purrr::map_chr(ancestors, list("id",4), .default = NA)),
+      snu1 = dplyr::if_else(
+        condition = is.na(purrr::map_chr(ancestors, list("name",4), .default = NA)),
+        true = psnu,
+        false = purrr::map_chr(ancestors, list("name",4), .default = NA))
+    ) %>%
+    dplyr::select(ou, ou_id, country_name, country_uid, snu1, snu1_id, psnu, psnu_uid)
+  
+  df %>% dplyr::left_join(PSNUs, by = c("psnuid" = "psnu_uid"))
+  
+}
+
+
+prepareFlatMERExport<-function(vr) {
+  
+  vr$data$distributedMER %>% 
+    dplyr::mutate(timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"),
+                  prioritization = NA,
+                  fiscal_year = "FY21") %>% 
+    dplyr::select( ou,
+                   ou_id,
+                   country_name,
+                   country_uid,
+                   snu1,
+                   snu1_id,
+                   psnu,
+                   psnuid,
+                   prioritization,
+                   mechanism_code,
+                   mechanism_desc,
+                   partner_id,
+                   partner_desc,
+                   funding_agency  = agency,
+                   fiscal_year,
+                   dataelement_id  = dataelement,
+                   dataelement_name = dataelement.y,
+                   indicator = technical_area,
+                   numerator_denominator,
+                   support_type,
+                   hts_modality,
+                   categoryoptioncombo_id = categoryoptioncombouid,
+                   categoryoptioncombo_name = categoryoptioncombo,
+                   age = Age,
+                   sex = Sex, 
+                   key_population = KeyPop,
+                   result_value = resultstatus, 
+                   target_value = value,
+                   timestamp)
+}
 sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
-  mer_data<-vr$data$MER %>% 
-    mutate(timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"))
+  
+  
+  mer_data<-prepareFlatMERExport(vr)
   
   #Need better error checking here I think. 
   write.table(
@@ -499,6 +554,7 @@ sendMERDataToPAW<-function(vr,config) {
   # Load the file as a raw binary
   read_file <- file(tmp, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  close(read_file)
   
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
@@ -544,12 +600,16 @@ validationSummary<-function(vr,config) {
     tidyr::unnest(cols=c(value)) %>% 
     dplyr::filter(value != 0) %>% 
     NROW(.)
+  
   non_numeric<-length(vr$tests$non_numeric)
+  
+  validation_rule_issues<-NROW(vr$datim$vr_rules_check)
   
   validation_summary<-tibble::tribble(~type, ~count,
                                       "Non-numeric values", non_numeric,
                                       "Sheets out of order", sheets_out_of_order,
-                                      "Sheets with columns out of order", columns_out_of_order )
+                                      "Sheets with columns out of order", columns_out_of_order,
+                                      "Validation rule issues: ",validation_rule_issues)
   
   tmp <- tempfile()
   #Need better error checking here I think. 
@@ -565,6 +625,7 @@ validationSummary<-function(vr,config) {
   # Load the file as a raw binary
   read_file <- file(tmp, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  close(read_file)
   
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
