@@ -9,18 +9,18 @@ pacman::p_load(shiny,
                scales,
                DT,
                config)
-# library(shiny)
-# library(shinyjs)
-# require(magrittr)
-# require(dplyr)
-# require(datimvalidation)
-# require(ggplot2)
-# require(futile.logger)
-# require(paws)
-# require(datapackr)
-# require(scales)
-# require(DT)
-# require(config)
+ library(shiny)
+ library(shinyjs)
+ require(magrittr)
+ require(dplyr)
+ require(datimvalidation)
+ require(ggplot2)
+ require(futile.logger)
+ require(paws)
+ require(datapackr)
+ require(scales)
+ require(DT)
+ require(config)
 
 source("./utils.R")
 
@@ -189,9 +189,6 @@ shinyServer(function(input, output, session) {
           shinyjs::show("send_paw")
           shinyjs::enable("send_paw")
         }
-        
-        
-        
       }
     })
     

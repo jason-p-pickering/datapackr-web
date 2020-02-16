@@ -318,14 +318,17 @@ adornMERData <- function(df){
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
   
-  df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
+  df %<>%  
+    dplyr::mutate(support_type = case_when(mechanism_code == '99999' ~ 'DSD',
+                                           TRUE ~ support_type)) %>% 
+    dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
                                    dplyr::rename(Age = valid_ages.name,
                                                  Sex = valid_sexes.name,
                                                  KeyPop = valid_kps.name) )) %>%
     dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
   
   #Join category option group sets
-  df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
+   df %<>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
     dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
   
   #Data element group set dimension adornment  
