@@ -537,7 +537,8 @@ prepareFlatMERExport<-function(vr) {
 sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
-  mer_data<-prepareFlatMERExport(vr)
+  mer_data<-prepareFlatMERExport(vr) %>% 
+    dplyr::select(-disagg_type)
   
   #Need better error checking here I think. 
   write.table(
