@@ -1,26 +1,17 @@
-pacman::p_load(shiny,
-               shinyjs,
-               magrittr,
-               purrr,
-               dplyr,
-               datimvalidation,
-               ggplot2,
-               futile.logger,
-               scales,
-               DT,
-               config)
- library(shiny)
- library(shinyjs)
- require(magrittr)
- require(dplyr)
- require(datimvalidation)
- require(ggplot2)
- require(futile.logger)
- require(paws)
- require(datapackr)
- require(scales)
- require(DT)
- require(config)
+
+library(shiny)
+library(shinyjs)
+require(magrittr)
+require(dplyr)
+require(datimvalidation)
+require(ggplot2)
+require(futile.logger)
+require(paws)
+require(datapackr)
+require(scales)
+require(DT)
+require(config)
+require(purrr)
 
 source("./utils.R")
 
@@ -151,6 +142,7 @@ shinyServer(function(input, output, session) {
       shinyjs::disable("file1")
       shinyjs::disable("validate")
       incProgress(0.1, detail = ("Validating your DataPack"))
+      
       d<-tryCatch({
         datapackr::unPackTool(inFile$datapath)},
         error = function(e){
@@ -159,29 +151,33 @@ shinyServer(function(input, output, session) {
       
       if (!inherits(d,"error") & !is.null(d)) {
         
+        #We do not have a great way of dealing with datapacks with multiple country ids...
+        d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
         
         if ( d$info$has_psnuxim ) {
           flog.info("Datapack with PSNUxIM tab found.")
           incProgress(0.1, detail = ("Checking validation rules"))
+          Sys.sleep(0.5)
           d <- validatePSNUData(d)
           incProgress(0.1,detail="Validating mechanisms")
+          Sys.sleep(0.5)
           d <- validateMechanisms(d)
           incProgress(0.1, detail = ("Making mechanisms prettier"))
+          Sys.sleep(0.5)
           d$data$distributedMER %<>% adornMechanisms()
-          Sys.sleep(0.5)
           incProgress(0.1, detail = ("Running dimensional transformation"))
+          Sys.sleep(0.5)
           d$data$distributedMER %<>% adornMERData()
-          Sys.sleep(0.5)
           incProgress(0.1, detail = ("Running spatial transformation"))
-          d$data$distributedMER %<>% adornPSNUs()
           Sys.sleep(0.5)
+          d$data$distributedMER %<>% adornPSNUs()
           incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
+          Sys.sleep(0.5)
           archiveDataPacktoS3(d,inFile$datapath,config)
           incProgress(0.1, detail = ("Sending validation summary."))
+          Sys.sleep(0.5)
           validationSummary(d,config)
-          #We do not have a great way of dealing with datapacks with multiple country ids...
-          d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
           
           shinyjs::show("downloadFlatPack")
           shinyjs::show("vr_rules")
@@ -197,7 +193,6 @@ shinyServer(function(input, output, session) {
   }
   
   validation_results <- reactive({ validate() })
-  
   
   output$modality_summary <- renderPlot({ 
     

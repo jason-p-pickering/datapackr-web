@@ -163,7 +163,6 @@ validateMechanisms<-function(d) {
   
 }
 
-
 getMechanismView<-function() {
   
   cached_mechs <- paste0(config$deploy_location,"mechs.rds")
@@ -318,21 +317,18 @@ adornMERData <- function(df){
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
   
-  df %<>%  
-    dplyr::mutate(support_type = case_when(mechanism_code == '99999' ~ 'DSD',
-                                           TRUE ~ support_type)) %>% 
-    dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
+  df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
                                    dplyr::rename(Age = valid_ages.name,
                                                  Sex = valid_sexes.name,
                                                  KeyPop = valid_kps.name) )) %>%
     dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
   
   #Join category option group sets
-   df %<>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
+  df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
     dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
   
   #Data element group set dimension adornment  
-  cached_degs<-"/srv/shiny-server/apps/datapack/degs_map.rds"
+  cached_degs<-paste0(config$deploy_location,"degs_map.rds")
   
   if ( file.access(cached_degs,4) == 0 ) {
     degs_map <-readRDS(cached_degs)
@@ -413,7 +409,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-d$info[names(d$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("datapack_archives/",d$info$country_uids,"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
+  object_name<-paste0("datapack_archives/",gsub(" ","_",d$info$datapack_name),"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
   # Load the file as a raw binary
   read_file <- file(datapath, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(datapath))
@@ -478,9 +474,8 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   unlink(tmp)
 }
 
-adornPSNUs<-function(df) {
-  
-  PSNUs <- datapackr::valid_PSNUs %>%
+getPSNUList<-function() {
+  datapackr::valid_PSNUs %>%
     dplyr::mutate(
       ou_id = purrr::map_chr(ancestors, list("id", 3), .default = NA),
       ou = purrr::map_chr(ancestors, list("name", 3), .default = NA),
@@ -494,11 +489,13 @@ adornPSNUs<-function(df) {
         false = purrr::map_chr(ancestors, list("name",4), .default = NA))
     ) %>%
     dplyr::select(ou, ou_id, country_name, country_uid, snu1, snu1_id, psnu, psnu_uid)
-  
-  df %>% dplyr::left_join(PSNUs, by = c("psnuid" = "psnu_uid"))
-  
 }
 
+adornPSNUs<-function(df) {
+  
+  df %>% dplyr::left_join(getPSNUList(), by = c("psnuid" = "psnu_uid"))
+  
+}
 
 prepareFlatMERExport<-function(vr) {
   
@@ -524,9 +521,9 @@ prepareFlatMERExport<-function(vr) {
                    dataelement_id  = dataelement,
                    dataelement_name = dataelement.y,
                    indicator = technical_area,
-                   numerator_denominator,
-                   support_type,
-                   hts_modality,
+                   numerator_denominator ,
+                   support_type ,
+                   hts_modality ,
                    categoryoptioncombo_id = categoryoptioncombouid,
                    categoryoptioncombo_name = categoryoptioncombo,
                    age = Age,
@@ -536,11 +533,10 @@ prepareFlatMERExport<-function(vr) {
                    target_value = value,
                    timestamp)
 }
+
 sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
-  
-  
   mer_data<-prepareFlatMERExport(vr)
   
   #Need better error checking here I think. 
@@ -562,7 +558,7 @@ sendMERDataToPAW<-function(vr,config) {
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("processed/",vr$info$country_uids,".csv")
+  object_name<-paste0("processed/",gsub(" ","_",vr$info$datapack_name),".csv")
   s3<-paws::s3()
   
   tryCatch({
@@ -608,11 +604,16 @@ validationSummary<-function(vr,config) {
   
   validation_rule_issues<-NROW(vr$datim$vr_rules_check)
   
-  validation_summary<-tibble::tribble(~type, ~count,
+  validation_summary<-tibble::tribble(~validation_issue_category, ~count,
                                       "Non-numeric values", non_numeric,
                                       "Sheets out of order", sheets_out_of_order,
                                       "Sheets with columns out of order", columns_out_of_order,
-                                      "Validation rule issues: ",validation_rule_issues)
+                                      "Validation rule issues",validation_rule_issues)
+  validation_summary %<>%
+    mutate(ou = vr$info$datapack_name,
+           ou_id = vr$info$country_uids,
+           country_name = NA,
+           country_uid = NA )
   
   tmp <- tempfile()
   #Need better error checking here I think. 
@@ -633,7 +634,8 @@ validationSummary<-function(vr,config) {
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("validations/",vr$info$country_uids,".csv")
+  
+  object_name<-paste0("Validation_Error/",gsub(" ","_",vr$info$datapack_name),".csv")
   s3<-paws::s3()
   
   tryCatch({
@@ -655,3 +657,4 @@ validationSummary<-function(vr,config) {
   
   
 }
+
