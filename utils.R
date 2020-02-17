@@ -522,6 +522,7 @@ prepareFlatMERExport<-function(vr) {
                    indicator = technical_area,
                    numerator_denominator ,
                    support_type ,
+                   disagg_type,
                    hts_modality ,
                    categoryoptioncombo_id = categoryoptioncombouid,
                    categoryoptioncombo_name = categoryoptioncombo,
