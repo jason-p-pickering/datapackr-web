@@ -409,7 +409,9 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-d$info[names(d$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("datapack_archives/",gsub(" ","_",d$info$datapack_name),"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
+  sane_name<-paste0(stringr::str_extract_all(d$info$datapack_name,"[A-Za-z0-9_]",
+                                             simplify = TRUE),sep="",collapse="")
+  object_name<-paste0("datapack_archives/",gsub(" ","_",sane_name),"_",format(Sys.time(),"%Y%m%d_%H%m%s"),".xlsx")
   # Load the file as a raw binary
   read_file <- file(datapath, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(datapath))
@@ -453,8 +455,9 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   read_file <- file(tmp, "rb")
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
   close(read_file)
-  
-  object_name<-paste0("upload_timestamp/",d$info$country_uids,".csv")
+  sane_name<-paste0(stringr::str_extract_all(d$info$datapack_name,"[A-Za-z0-9_]",
+                                             simplify = TRUE),sep="",collapse="")
+  object_name<-paste0("upload_timestamp/",sane_name,".csv")
   
   tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
@@ -555,10 +558,13 @@ sendMERDataToPAW<-function(vr,config) {
   raw_file <- readBin(read_file, "raw", n = file.size(tmp))
   close(read_file)
   
+  sane_name<-paste0(stringr::str_extract_all(vr$info$datapack_name,"[A-Za-z0-9_]",
+                                             simplify = TRUE),sep="",collapse="")
+                               
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("processed/",gsub(" ","_",vr$info$datapack_name),".csv")
+  object_name<-paste0("processed/",gsub(" ","_",sane_name),".csv")
   s3<-paws::s3()
   
   tryCatch({
@@ -634,8 +640,9 @@ validationSummary<-function(vr,config) {
   tags<-c("tool","country_uids","cop_year","has_error","datapack_name","datapack_name")
   object_tags<-vr$info[names(vr$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  
-  object_name<-paste0("Validation_Error/",gsub(" ","_",vr$info$datapack_name),".csv")
+  sane_name<-paste0(stringr::str_extract_all(vr$info$datapack_name,"[A-Za-z0-9_]",
+                                             simplify = TRUE),sep="",collapse="")
+  object_name<-paste0("Validation_Error/",gsub(" ","_",sane_name),".csv")
   s3<-paws::s3()
   
   tryCatch({
