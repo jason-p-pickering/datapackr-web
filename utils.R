@@ -294,10 +294,9 @@ getDEGSMap <- function(uid) {
 #Used with permission from @achafetz  
 #https://github.com/USAID-OHA-SI/tameDP/blob/master/R/clean_indicators.R
 
-adornMERData <- function(df){
+adornMERData <- function(d){
   
-  
-  if ( is.null(df) ) { return(NULL) }
+  if ( is.null(d) ) { return(NULL) }
   
   hiv_specific<-getCOGSMap("bDWsPYyXgWP") %>% #HIV Test Status (Specific)
     purrr::pluck("dimension_map") %>%
@@ -317,12 +316,23 @@ adornMERData <- function(df){
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
   
+  #Append the distributed MER data and subnat data together
+  df <- dplyr::bind_rows(d$data$distributedMER,
+                         dplyr::mutate(d$data$SUBNAT_IMPATT,mechanism_code = "HllvX50cXC0"))
+  
+  
   df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
                                    dplyr::rename(Age = valid_ages.name,
                                                  Sex = valid_sexes.name,
-                                                 KeyPop = valid_kps.name) )) %>%
-    dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
+                                                 KeyPop = valid_kps.name) ))
+  #Check for any data elements which do not have UIDs
+  na_dataelement_uids<-dplyr::filter(df,is.na(dataelement)) %>% 
+    dplyr::pull(indicator_code) %>% unique()
+  if ( length(na_dataelement_uids) > 0 ) {
+    flog.warn(paste0("The following indicator codes did not have a data element uid:",paste(na_dataelement_uids,sep="",collapse=",")))
+  }
   
+  # %>% dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
   #Join category option group sets
   df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
     dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
@@ -352,10 +362,11 @@ adornMERData <- function(df){
     names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
   
-  df %>% 
+  d$data$distributedMER <-df %>% 
     dplyr::left_join( degs_map, by = "dataelement") %>%
     dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY20R/FY21T$",""))
   
+  return(d)
   
 }
 
@@ -520,9 +531,9 @@ prepareFlatMERExport<-function(vr) {
                    dataelement_id  = dataelement,
                    dataelement_name = dataelement.y,
                    indicator = technical_area,
+                   disagg_type,
                    numerator_denominator ,
                    support_type ,
-                   disagg_type,
                    hts_modality ,
                    categoryoptioncombo_id = categoryoptioncombouid,
                    categoryoptioncombo_name = categoryoptioncombo,
@@ -659,4 +670,3 @@ validationSummary<-function(vr,config) {
   
   
 }
-

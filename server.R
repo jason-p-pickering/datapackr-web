@@ -170,7 +170,7 @@ shinyServer(function(input, output, session) {
           d$data$distributedMER %<>% adornMechanisms()
           incProgress(0.1, detail = ("Running dimensional transformation"))
           Sys.sleep(0.5)
-          d$data$distributedMER %<>% adornMERData()
+          d %<>% adornMERData()
           incProgress(0.1, detail = ("Running spatial transformation"))
           Sys.sleep(0.5)
           d$data$distributedMER %<>% adornPSNUs()
