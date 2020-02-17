@@ -153,6 +153,8 @@ shinyServer(function(input, output, session) {
         
         #We do not have a great way of dealing with datapacks with multiple country ids...
         d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+        d$info$sane_name<-paste0(stringr::str_extract_all(d$info$datapack_name,"[A-Za-z0-9_]",
+                                                          simplify = TRUE),sep="",collapse="")
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
         
         if ( d$info$has_psnuxim ) {
