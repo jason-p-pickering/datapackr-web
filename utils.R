@@ -334,7 +334,7 @@ adornMERData <- function(d){
   df <- dplyr::bind_rows(d$data$distributedMER,
                          dplyr::mutate(d$data$SUBNAT_IMPATT,
                                        mechanism_code = "HllvX50cXC0",
-                                       support_type=NA))
+                                       support_type="DSD"))
   
   
   df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
@@ -345,7 +345,7 @@ adornMERData <- function(d){
   na_dataelement_uids<-dplyr::filter(df,is.na(dataelement)) %>% 
     dplyr::pull(indicator_code) %>% unique()
   if ( length(na_dataelement_uids) > 0 ) {
-    flog.warn(paste0("The following indicator codes did not have a data element uid:",paste(na_dataelement_uids,sep="",collapse=",")))
+    flog.warn(paste0("The following indicator codes did not have a data element uid:",paste(na_dataelement_uids,sep="",collapse=",")),name="datapack")
   }
   
   # %>% dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
