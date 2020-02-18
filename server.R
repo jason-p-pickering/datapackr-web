@@ -12,6 +12,7 @@ require(scales)
 require(DT)
 require(config)
 require(purrr)
+require(praise)
 
 source("./utils.R")
 
@@ -186,6 +187,9 @@ shinyServer(function(input, output, session) {
           incProgress(0.1, detail = ("Sending validation summary."))
           Sys.sleep(0.5)
           validationSummary(d,config)
+          incProgress(0.1, detail = (praise()))
+          Sys.sleep(0.5)
+          
           
           shinyjs::show("downloadFlatPack")
           shinyjs::show("vr_rules")
