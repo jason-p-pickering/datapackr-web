@@ -189,6 +189,9 @@ shinyServer(function(input, output, session) {
           Sys.sleep(0.5)
           could_send<-validationSummary(d,config)
           validationSummaryUI(could_send)
+          incProgress(0.1, detail = ("Saving DATIM export."))
+          Sys.sleep(0.5)
+          saveDATIMExportToS3(d)
           incProgress(0.1, detail = (praise()))
           Sys.sleep(1)
           
@@ -321,7 +324,7 @@ shinyServer(function(input, output, session) {
 
         openxlsx::addWorksheet(wb,"DATIM export")
         openxlsx::writeData(wb = wb,
-                            sheet = "DATIM export",x = validation_rules)
+                            sheet = "DATIM export",x = datim_export)
         
       }
       
