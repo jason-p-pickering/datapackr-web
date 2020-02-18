@@ -458,11 +458,18 @@ archiveDataPacktoS3<-function(d,datapath,config) {
                           "The DataPack could not be archived."))
   })
   
+ 
+}
+
+
+saveTimeStampLogToS3<-function(d) {
   #Save a timestamp of the upload
   timestamp_info<-list(
     ou=d$info$datapack_name,
     ou_id=d$info$country_uids,
-    upload_timestamp=strftime(as.POSIXlt(Sys.time(), "UTC", "%Y-%m-%dT%H:%M:%S") , "%Y-%m-%d %H:%M:%S"),
+    country_name=d$info$datapack_name,
+    country_uid=d$info$country_uids,
+    upload_timestamp=strftime(as.POSIXlt(Sys.time(), "UTC") , "%Y-%m-%d %H:%M:%S"),
     filename=object_name
   )
   
@@ -482,22 +489,29 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   close(read_file)
   object_name<-paste0("upload_timestamp/",d$info$sane_name,".csv")
   
-  tryCatch({
+  r<-tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
                        Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "text/csv")
     flog.info("Timestamp log sent to S3", name = "datapack")
-    
+    TRUE
   },
   error = function(err) {
-    flog.info("Timestamp log could not be saved to S3",name = "datapack")
-    flog.info(err, name = "datapack")
-    showModal(modalDialog(title = "Error",
-                          "Timestamp log could not be saved to S3."))
+    flog.error("Timestamp log could not be saved to S3",name = "datapack")
+    FALSE
   })
   unlink(tmp)
+  return(r)
+}
+
+timestampUploadUI<-function(r) {
+  if (!r) {
+    showModal(modalDialog(title = "Error",
+                          "Timestamp log could not be saved to S3."))
+  }
+
 }
 
 getPSNUList<-function() {
