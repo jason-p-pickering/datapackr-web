@@ -658,16 +658,28 @@ validationSummary<-function(vr,config) {
   
   validation_rule_issues<-NROW(vr$datim$vr_rules_check)
   
+  invalid_dedupes<-NROW(vr$tests$invalid_dedupes)
+  
+  invalid_DSDTA<-NROW(vr$tests$invalid_DSDTA)
+  negative_distributed_targets<-NROW(vr$tests$negative_distributed_targets)
+  imbalancedDistribution<-NROW(vr$tests$imbalancedDistribution)
+  no_targets<-NROW(vr$tests$noTargets)
+  
   validation_summary<-tibble::tribble(~validation_issue_category, ~count,
                                       "Non-numeric values", non_numeric,
                                       "Sheets out of order", sheets_out_of_order,
                                       "Sheets with columns out of order", columns_out_of_order,
-                                      "Validation rule issues",validation_rule_issues)
+                                      "Validation rule issues",validation_rule_issues,
+                                      "Invalid DSD/TA", invalid_DSDTA,
+                                      "Negative distributed targets",negative_distributed_targets,
+                                      "Imbalanced distribution",imbalancedDistribution,
+                                      "Missing targets",no_targets,
+                                      "Invalid dedupes",invalid_dedupes)
   validation_summary %<>%
     mutate(ou = vr$info$datapack_name,
            ou_id = vr$info$country_uids,
-           country_name = NA,
-           country_uid = NA )
+           country_name = vr$info$datapack_name,
+           country_uid = vr$info$country_uids )
   
   tmp <- tempfile()
   #Need better error checking here I think. 
