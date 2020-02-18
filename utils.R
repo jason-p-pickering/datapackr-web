@@ -461,7 +461,6 @@ archiveDataPacktoS3<-function(d,datapath,config) {
  
 }
 
-
 saveTimeStampLogToS3<-function(d) {
   #Write an archived copy of the file
   s3<-paws::s3()
@@ -756,3 +755,46 @@ validationSummaryUI<-function(r) {
     flog.info("Validation summary  sent to AP",name = "datapack")
   }
 }
+
+saveDATIMExportToS3<-function(d) {
+  #Write the flatpacked output
+  tmp <- tempfile()
+  datim_export<-dplyr::rbind(d$datim$MER,d$datim$subnat_impatt)
+  
+  #Need better error checking here I think. 
+  write.table(
+    datim_export,
+    file = tmp,
+    quote = FALSE,
+    sep = "|",
+    row.names = FALSE,
+    na = "",
+    fileEncoding = "UTF-8"
+  )
+  
+  # Load the file as a raw binary
+  read_file <- file(tmp, "rb")
+  raw_file <- readBin(read_file, "raw", n = file.size(tmp))
+  close(read_file)
+  
+  
+  tags<-c("tool","country_uids","cop_year","has_error","sane_name")
+  object_tags<-vr$info[names(vr$info) %in% tags] 
+  object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
+  object_name<-paste0("datim_export/",d$info$sane_name,".csv")
+  s3<-paws::s3()
+  
+  tryCatch({
+    foo<-s3$put_object(Bucket = config$s3_bucket,
+                       Body = raw_file,
+                       Key = object_name,
+                       Tagging = object_tags,
+                       ContentType = "text/csv")
+    flog.info("DATIM Export sent to S3", name = "datapack")
+  },
+  error = function(err) {
+    flog.info("DATIM Export could not be sent to  S3",name = "datapack")
+    flog.info(err, name = "datapack") })
+  
+  unlink(tmp) }
+  

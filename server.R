@@ -283,12 +283,12 @@ shinyServer(function(input, output, session) {
       #Create a new workbook
       wb <- openxlsx::createWorkbook()
       
-      
-      mer_data <- validation_results() %>% 
+      d<-validation_results()
+      mer_data <- d %>% 
         purrr::pluck(.,"data") %>% 
         purrr::pluck(.,"MER")
       
-      subnat_impatt <- validation_results() %>% 
+      subnat_impatt <- d %>% 
         purrr::pluck(.,"data") %>% 
         purrr::pluck(.,"SUBNAT_IMPATT")
       
@@ -297,19 +297,19 @@ shinyServer(function(input, output, session) {
       openxlsx::writeDataTable(wb = wb,
                                sheet = "MER Data",x = mer_data)
       
-      has_psnu<-validation_results() %>% 
+      has_psnu<-d %>% 
         purrr::pluck(.,"info") %>% 
         purrr::pluck(.,"has_psnuxim")
       
       if (has_psnu) {
         
-        distributed_mer<- prepareFlatMERExport(validation_results())
+        distributed_mer<- prepareFlatMERExport(d)
         
         openxlsx::addWorksheet(wb,"Distributed MER Data")
         openxlsx::writeDataTable(wb = wb,
                                  sheet = "Distributed MER Data",x = distributed_mer)
         
-        validation_rules<- validation_results() %>% 
+        validation_rules<- d %>% 
           purrr::pluck(.,"datim") %>% 
           purrr::pluck(.,"vr_rules_check") 
         
@@ -317,13 +317,15 @@ shinyServer(function(input, output, session) {
         openxlsx::writeData(wb = wb,
                             sheet = "Validation rules",x = validation_rules)
         
+        datim_export<-dplyr::rbind(d$datim$MER,d$datim$subnat_impatt)
+        
+        openxlsx::addWorksheet(wb,"DATIM export")
+        openxlsx::writeData(wb = wb,
+                            sheet = "DATIM export",x = validation_rules)
+        
       }
       
-      datapack_name <-
-        validation_results() %>% 
-        purrr::pluck(.,"info") %>%
-        purrr::pluck(.,"country_uids") %>% 
-        getCountryNameFromUID()
+      datapack_name <-d$info$datapack_name
       
       flog.info(
         paste0("Flatpack requested for ", datapack_name) 
