@@ -723,7 +723,7 @@ validationSummary<-function(vr,config) {
   object_tags<-vr$info[names(vr$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
   
-  object_name<-paste0("Validation_Error/",vr$info$sane_name,".csv")
+  object_name<-paste0("validation_error/",vr$info$sane_name,".csv")
   s3<-paws::s3()
   
   r<-tryCatch({
