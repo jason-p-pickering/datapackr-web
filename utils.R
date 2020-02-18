@@ -664,6 +664,7 @@ validationSummary<-function(vr,config) {
   negative_distributed_targets<-NROW(vr$tests$negative_distributed_targets)
   imbalancedDistribution<-NROW(vr$tests$imbalancedDistribution)
   no_targets<-NROW(vr$tests$noTargets)
+  undistributed<-vr$tests$undistributed
   
   validation_summary<-tibble::tribble(~validation_issue_category, ~count,
                                       "Non-numeric values", non_numeric,
@@ -673,8 +674,9 @@ validationSummary<-function(vr,config) {
                                       "Invalid DSD/TA", invalid_DSDTA,
                                       "Negative distributed targets",negative_distributed_targets,
                                       "Imbalanced distribution",imbalancedDistribution,
-                                      "Missing targets",no_targets,
-                                      "Invalid dedupes",invalid_dedupes)
+                                      "Targets with missing distribution",no_targets,
+                                      "Invalid dedupes",invalid_dedupes,
+                                      "Undistributed targets",undistributed)
   validation_summary %<>%
     mutate(ou = vr$info$datapack_name,
            ou_id = vr$info$country_uids,
