@@ -317,8 +317,8 @@ shinyServer(function(input, output, session) {
         openxlsx::writeData(wb = wb,
                             sheet = "Validation rules",x = validation_rules)
         
-        datim_export<-dplyr::rbind(d$datim$MER,d$datim$subnat_impatt)
-        
+        datim_export<-dplyr::bind_rows(d$datim$MER,d$datim$subnat_impatt)
+
         openxlsx::addWorksheet(wb,"DATIM export")
         openxlsx::writeData(wb = wb,
                             sheet = "DATIM export",x = validation_rules)

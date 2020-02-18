@@ -759,7 +759,7 @@ validationSummaryUI<-function(r) {
 saveDATIMExportToS3<-function(d) {
   #Write the flatpacked output
   tmp <- tempfile()
-  datim_export<-dplyr::rbind(d$datim$MER,d$datim$subnat_impatt)
+  datim_export<-dplyr::bind_rows(d$datim$MER,d$datim$subnat_impatt)
   
   #Need better error checking here I think. 
   write.table(
