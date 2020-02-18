@@ -163,7 +163,7 @@ shinyServer(function(input, output, session) {
           #TODO: Where do we handle rounding? Probably in datapackr?
           # Some values should not be rounded. How to determine this? 
           can_round <- !is.na(suppressWarnings(as.numeric(d$data$distributedMER$value)))
-          d$data$distributedMER$value[can_round]<-datapackr:::round(d$data$distributedMER$value[can_round])
+          d$data$distributedMER$value[can_round]<-round(d$data$distributedMER$value[can_round])
           
           incProgress(0.1, detail = ("Checking validation rules"))
           Sys.sleep(0.5)
