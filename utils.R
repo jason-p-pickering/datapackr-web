@@ -232,11 +232,11 @@ adornMechanisms <- function(d) {
   
   dplyr::left_join( d , mechs, by = "mechanism_code") %>% 
     dplyr::mutate(mechanism_desc = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
-                                                  TRUE ~ mechanism_desc),
+                                                    TRUE ~ mechanism_desc),
                   partner_desc = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
                                                   TRUE ~ partner_desc),
                   partner_id = dplyr::case_when(mechanism_code == "99999" ~ '99999',
-                                                 TRUE ~ partner_id),
+                                                TRUE ~ partner_id),
                   agency = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
                                             TRUE ~ agency))
   
@@ -327,7 +327,7 @@ adornMERData <- function(d){
   
   #Classify all dedupe as DSD
   d$data$distributedMER %<>% dplyr::mutate(support_type = dplyr::case_when(mechanism_code == "99999" ~ 'DSD',
-                                                           TRUE ~ support_type))
+                                                                           TRUE ~ support_type))
   
   
   #Append the distributed MER data and subnat data together
@@ -542,7 +542,7 @@ adornPSNUs<-function(d) {
   
   d$data$distributedMER %<>% dplyr::left_join(prio,by="psnuid") %>% 
     dplyr::mutate(prioritization = case_when(is.na(prioritization) ~ "No Prioritization",
-                                      TRUE ~ prioritization ))
+                                             TRUE ~ prioritization ))
   
   d
   
@@ -590,7 +590,7 @@ sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
   mer_data<-prepareFlatMERExport(vr)
-  
+
   #Need better error checking here I think. 
   write.table(
     mer_data,
@@ -705,24 +705,33 @@ validationSummary<-function(vr,config) {
   object_name<-paste0("Validation_Error/",vr$info$sane_name,".csv")
   s3<-paws::s3()
   
-  tryCatch({
+  r<-tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
                        Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "text/csv")
-    flog.info("Validation summary sent to AP", name = "datapack")
+    
+    return(TRUE)
   },
   error = function(err) {
     flog.info("Validation summary could not be sent to AP",name = "datapack")
     flog.info(err, name = "datapack")
-    showModal(modalDialog(title = "Error",
-                          "Validation summary could not be sent to AP."))
+    return(FALSE)
   })
   
   unlink(tmp)
   
+  return(r)
   
 }
 
-
+validationSummaryUI<-function(r) {
+  if (!r) {
+    flog.error("Validation summary could not be sent to AP",name = "datapack")
+    showModal(modalDialog(title = "Error",
+                          "Validation summary could not be sent to AP."))
+  } else {
+    flog.info("Validation summary  sent to AP",name = "datapack")
+  }
+}

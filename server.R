@@ -186,9 +186,10 @@ shinyServer(function(input, output, session) {
           archiveDataPacktoS3(d,inFile$datapath,config)
           incProgress(0.1, detail = ("Sending validation summary."))
           Sys.sleep(0.5)
-          validationSummary(d,config)
+          could_send<-validationSummary(d,config)
+          validationSummaryUI(could_send)
           incProgress(0.1, detail = (praise()))
-          Sys.sleep(0.5)
+          Sys.sleep(1)
           
           
           shinyjs::show("downloadFlatPack")
