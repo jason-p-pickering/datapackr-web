@@ -318,13 +318,15 @@ adornMERData <- function(d){
   
   #Append the distributed MER data and subnat data together
   df <- dplyr::bind_rows(d$data$distributedMER,
-                         dplyr::mutate(d$data$SUBNAT_IMPATT,mechanism_code = "HllvX50cXC0"))
+                         dplyr::mutate(d$data$SUBNAT_IMPATT,
+                                       mechanism_code = "HllvX50cXC0",
+                                       support_type=NA))
   
   
   df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
                                    dplyr::rename(Age = valid_ages.name,
                                                  Sex = valid_sexes.name,
-                                                 KeyPop = valid_kps.name) ))
+                                                 KeyPop = valid_kps.name) ), by=c("Age","Sex","KeyPop","indicator_code","support_type"))
   #Check for any data elements which do not have UIDs
   na_dataelement_uids<-dplyr::filter(df,is.na(dataelement)) %>% 
     dplyr::pull(indicator_code) %>% unique()
@@ -549,7 +551,8 @@ sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
   mer_data<-prepareFlatMERExport(vr) %>% 
-    dplyr::select(-disagg_type)
+  #Seems we need to remove the disagg type group for some reason
+  dplyr::select(-disagg_type)
   
   #Need better error checking here I think. 
   write.table(
@@ -670,3 +673,4 @@ validationSummary<-function(vr,config) {
   
   
 }
+
