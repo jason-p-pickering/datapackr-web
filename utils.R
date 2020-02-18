@@ -780,7 +780,7 @@ saveDATIMExportToS3<-function(d) {
   
   
   tags<-c("tool","country_uids","cop_year","has_error","sane_name")
-  object_tags<-vr$info[names(vr$info) %in% tags] 
+  object_tags<-d$info[names(d$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
   object_name<-paste0("datim_export/",d$info$sane_name,".csv")
   s3<-paws::s3()
