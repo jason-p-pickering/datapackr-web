@@ -517,9 +517,9 @@ getPSNUList<-function() {
     dplyr::select(ou, ou_id, country_name, country_uid, snu1, snu1_id, psnu, psnu_uid)
 }
 
-adornPSNUs<-function(df) {
+adornPSNUs<-function(d) {
   
-  df %>% dplyr::left_join(getPSNUList(), by = c("psnuid" = "psnu_uid"))
+  d$data$distributedMER %<>% dplyr::left_join(getPSNUList(), by = c("psnuid" = "psnu_uid"))
   
   prio_defined<-tibble::tribble(
     ~value,~prioritization,
@@ -539,9 +539,11 @@ adornPSNUs<-function(df) {
     dplyr::select(psnuid,value) %>% 
     dplyr::left_join(prio_defined,by="value")
   
-  df %>% dplyr::left_join(prio,by="psnuid") %>% 
+  d$data$distributedMER %<>% dplyr::left_join(prio,by="psnuid") %>% 
     dplyr::mutate(prioritization = case_when(is.na(prioritization) ~ "No Prioritization",
                                       TRUE ~ prioritization ))
+  
+  d
   
 }
 

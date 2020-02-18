@@ -179,7 +179,7 @@ shinyServer(function(input, output, session) {
           d %<>% adornMERData()
           incProgress(0.1, detail = ("Running spatial transformation"))
           Sys.sleep(0.5)
-          d$data$distributedMER %<>% adornPSNUs()
+          d %<>% adornPSNUs()
           incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
           Sys.sleep(0.5)
           archiveDataPacktoS3(d,inFile$datapath,config)
