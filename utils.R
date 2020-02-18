@@ -571,7 +571,6 @@ prepareFlatMERExport<-function(vr) {
                    dataelement_id  = dataelement,
                    dataelement_name = dataelement.y,
                    indicator = technical_area,
-                   disagg_type,
                    numerator_denominator ,
                    support_type ,
                    hts_modality ,
@@ -582,15 +581,15 @@ prepareFlatMERExport<-function(vr) {
                    key_population = KeyPop,
                    result_value = resultstatus, 
                    target_value = value,
-                   timestamp)
+                   timestamp,
+                   disagg_type,
+                   resultstatus_inclusive)
 }
 
 sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
-  mer_data<-prepareFlatMERExport(vr) %>% 
-  #Seems we need to remove the disagg type group for some reason
-  dplyr::select(-disagg_type)
+  mer_data<-prepareFlatMERExport(vr)
   
   #Need better error checking here I think. 
   write.table(
