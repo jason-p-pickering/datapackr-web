@@ -230,7 +230,16 @@ adornMechanisms <- function(d) {
   mechs<-getMechanismView() %>% 
     dplyr::select(-ou,-startdate,-enddate)
   
-  dplyr::left_join( d , mechs, by = "mechanism_code")
+  dplyr::left_join( d , mechs, by = "mechanism_code") %>% 
+    dplyr::mutate(mechanism_desc = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
+                                                  TRUE ~ mechanism_desc),
+                  partner_desc = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
+                                                  TRUE ~ partner_desc),
+                  partner_id = dplyr::case_when(mechanism_code == "99999" ~ '99999',
+                                                 TRUE ~ partner_id),
+                  agency = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
+                                            TRUE ~ agency))
+  
   
 }
 
@@ -315,6 +324,11 @@ adornMERData <- function(d){
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"HIV","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
     dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
+  
+  #Classify all dedupe as DSD
+  d$data$distributedMER %<>% dplyr::mutate(support_type = dplyr::case_when(mechanism_code == "99999" ~ 'DSD',
+                                                           TRUE ~ support_type))
+  
   
   #Append the distributed MER data and subnat data together
   df <- dplyr::bind_rows(d$data$distributedMER,
