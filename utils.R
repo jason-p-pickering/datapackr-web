@@ -663,7 +663,7 @@ validationSummary<-function(vr,config) {
   negative_distributed_targets<-NROW(vr$tests$negative_distributed_targets)
   imbalancedDistribution<-NROW(vr$tests$imbalancedDistribution)
   no_targets<-NROW(vr$tests$noTargets)
-  undistributed<-vr$tests$undistributed
+  undistributed<-NROW(vr$tests$undistributed)
   
   validation_summary<-tibble::tribble(~validation_issue_category, ~count,
                                       "Non-numeric values", non_numeric,
