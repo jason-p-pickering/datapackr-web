@@ -463,6 +463,13 @@ archiveDataPacktoS3<-function(d,datapath,config) {
 
 
 saveTimeStampLogToS3<-function(d) {
+  #Write an archived copy of the file
+  s3<-paws::s3()
+  tags<-c("tool","country_uids","cop_year","has_error","sane_name")
+  object_tags<-d$info[names(d$info) %in% tags] 
+  object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
+  object_name<-paste0("processed/",d$info$sane_name,".csv")
+  
   #Save a timestamp of the upload
   timestamp_info<-list(
     ou=d$info$datapack_name,
