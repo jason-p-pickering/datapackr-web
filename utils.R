@@ -362,18 +362,21 @@ adornMERData <- function(d){
     
     data_element_dims <-
       c("HWPJnUTMjEq",
-        "LxhLO68FcXm")
+        "LxhLO68FcXm",
+        "gIBfzXabKkt")
     
     degs_map <- purrr::map_dfr(data_element_dims,getDEGSMap) %>% 
       tidyr::spread(type,name,fill=NA) 
     #Remapping of column names
     from<-c("dataElements",
             "Disaggregation.Type", 
-            "Technical.Area")
+            "Technical.Area",
+            "Top.Level..USE.ONLY.for.FY20.Results.FY21.Targets.")
     
     to<-c("dataelement",
           "disagg_type",
-          "technical_area")
+          "technical_area",
+          "top_level")
     
     names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
   }
@@ -612,7 +615,8 @@ prepareFlatMERExport<-function(vr) {
                    target_value = value,
                    timestamp,
                    disagg_type,
-                   resultstatus_inclusive)
+                   resultstatus_inclusive,
+                   top_level)
 }
 
 sendMERDataToPAW<-function(vr,config) {
