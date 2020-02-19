@@ -442,26 +442,35 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   raw_file <- readBin(read_file, "raw", n = file.size(datapath))
   close(read_file)
   
-  tryCatch({
+  r<-tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
                        Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     flog.info("Datapack Archive sent to S3", name = "datapack")
-    
+    TRUE
   },
   error = function(err) {
     flog.info("Datapack could not be archived",name = "datapack")
     flog.info(err, name = "datapack")
-    showModal(modalDialog(title = "Error",
-                          "The DataPack could not be archived."))
+    FALSE
   })
   
+  return(r)
  
 }
 
-saveTimeStampLogToS3<-function(d) {
+
+
+archivDataPackErrorUI <- function(r) {
+  if (!r) {
+    showModal(modalDialog(title = "Error",
+                          "The DataPack could not be archived."))
+  }
+}
+
+  saveTimeStampLogToS3<-function(d) {
   #Write an archived copy of the file
   s3<-paws::s3()
   tags<-c("tool","country_uids","cop_year","has_error","sane_name")
@@ -732,12 +741,12 @@ validationSummary<-function(vr,config) {
                        Tagging = object_tags,
                        ContentType = "text/csv")
     
-    return(TRUE)
+    TRUE
   },
   error = function(err) {
     flog.info("Validation summary could not be sent to AP",name = "datapack")
     flog.info(err, name = "datapack")
-    return(FALSE)
+    FALSE
   })
   
   unlink(tmp)
@@ -748,12 +757,8 @@ validationSummary<-function(vr,config) {
 
 validationSummaryUI<-function(r) {
   if (!r) {
-    flog.error("Validation summary could not be sent to AP",name = "datapack")
-    showModal(modalDialog(title = "Error",
-                          "Validation summary could not be sent to AP."))
-  } else {
-    flog.info("Validation summary  sent to AP",name = "datapack")
-  }
+    showModal(modalDialog(title = "Error","Validation summary could not be sent to AP."))
+  } 
 }
 
 saveDATIMExportToS3<-function(d) {
@@ -785,17 +790,30 @@ saveDATIMExportToS3<-function(d) {
   object_name<-paste0("datim_export/",d$info$sane_name,".csv")
   s3<-paws::s3()
   
-  tryCatch({
+  r<-tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
                        Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "text/csv")
     flog.info("DATIM Export sent to S3", name = "datapack")
+    TRUE
   },
   error = function(err) {
     flog.info("DATIM Export could not be sent to  S3",name = "datapack")
-    flog.info(err, name = "datapack") })
+    flog.info(err, name = "datapack")
+    FALSE
+    })
   
-  unlink(tmp) }
+  unlink(tmp)
   
+  return(r)
+  
+  }
+  
+datimExportUI<-function(r) {
+  if (!r) {
+    showModal(modalDialog(title = "Error",
+                          "DATIM Export could not be sent to S3"))
+  } 
+}
