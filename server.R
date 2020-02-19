@@ -35,7 +35,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$reset_input, {
     shinyjs::reset("side-panel")
     shinyjs::enable("file1")
-    shinyjs::hide("validate")
+    shinyjs::disable("validate")
     shinyjs::hide("downloadFlatPack")
     shinyjs::hide("send_paw")
     ready$ok<-FALSE
@@ -130,7 +130,10 @@ shinyServer(function(input, output, session) {
     shinyjs::hide("vr_rules")
     shinyjs::hide("modality_summary")
     
-    if (!ready$ok) {return(NULL)}
+    if (!ready$ok) {
+      shinyjs::disable("validate")
+      return(NULL)
+    }
     
     inFile <- input$file1
     messages<-""
