@@ -91,7 +91,8 @@ shinyServer(function(input, output, session) {
             actionButton("reset_input", "Reset inputs"),
             tags$hr(),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
-            actionButton("send_paw", "Send to PAW")
+            actionButton("send_paw", "Send to PAW"),
+            downloadButton("downloadDataPack","Regenerate PSNUxIM")
           ),
           mainPanel(tabsetPanel(
             id = "main-panel",
@@ -126,6 +127,7 @@ shinyServer(function(input, output, session) {
   validate<-function() {
     
     shinyjs::hide("downloadFlatPack")
+    shinyjs::hide("downloadDataPack")
     shinyjs::hide("send_paw")
     shinyjs::hide("vr_rules")
     shinyjs::hide("modality_summary")
@@ -206,6 +208,8 @@ shinyServer(function(input, output, session) {
           shinyjs::show("modality_summary")
           shinyjs::show("send_paw")
           shinyjs::enable("send_paw")
+          shinyjs::show("downloadDataPack")
+          shinyjs::enable("downloadDataPack")
         }
       }
     })
@@ -277,6 +281,33 @@ shinyServer(function(input, output, session) {
     
   })
   
+  output$downloadDataPack <- downloadHandler(
+    filename = function() {
+      
+      d<-validation_results()
+      prefix <-d$info$sane_name
+      date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      paste0(paste(prefix,date,sep="_"),".xlsx")
+      
+    },
+    content = function(file) {
+      
+      d <- validation_results()
+      d$keychain$snuxim_model_data_path = config$snuxim_model
+      
+      flog.info(
+        paste0("Regeneration of Datapack requested for ", d$info$datapack_name) 
+        ,
+        name = "datapack")
+      d <- packSNUxIM(d)
+      flog.info(
+        paste0("Datapack reloaded for for ", d$info$datapack_name) ,
+        name = "datapack")
+      openxlsx::saveWorkbook(wb = d$tool$wb, file = file, overwrite = TRUE)
+    }
+  )
+  
+  
   output$downloadFlatPack <- downloadHandler(
     filename = function() {
       
@@ -326,7 +357,7 @@ shinyServer(function(input, output, session) {
                             sheet = "Validation rules",x = validation_rules)
         d$datim$MER$value<-as.character(d$datim$MER$value)
         datim_export<-dplyr::bind_rows(d$datim$MER,d$datim$subnat_impatt)
-
+        
         openxlsx::addWorksheet(wb,"DATIM export")
         openxlsx::writeData(wb = wb,
                             sheet = "DATIM export",x = datim_export)
