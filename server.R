@@ -42,10 +42,10 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$send_paw, {
-    vr <- validation_results()
-    r<-saveTimeStampLogToS3(vr)
+    d <- validation_results()
+    r<-saveTimeStampLogToS3(d)
     timestampUploadUI(r)
-    sendMERDataToPAW(vr,config)
+    sendMERDataToPAW(d,config)
     r<-archiveDataPacktoS3(d,inFile$datapath,config)
     archivDataPackErrorUI(r)
     r<-validationSummary(d,config)
