@@ -611,12 +611,12 @@ prepareFlatMERExport<-function(vr) {
                    age = Age,
                    sex = Sex, 
                    key_population = KeyPop,
-                   result_value = resultstatus, 
-                   target_value = value,
+                   resultstatus_specific = resultstatus,
                    upload_timestamp,
                    disagg_type,
                    resultstatus_inclusive,
-                   top_level)
+                   top_level,
+                   target_value = value)
 }
 
 sendMERDataToPAW<-function(vr,config) {
