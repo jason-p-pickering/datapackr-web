@@ -583,7 +583,7 @@ adornPSNUs<-function(d) {
 prepareFlatMERExport<-function(vr) {
   
   vr$data$distributedMER %>% 
-    dplyr::mutate(timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"),
+    dplyr::mutate(upload_timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"),
                   fiscal_year = "FY21") %>% 
     dplyr::select( ou,
                    ou_id,
@@ -613,7 +613,7 @@ prepareFlatMERExport<-function(vr) {
                    key_population = KeyPop,
                    result_value = resultstatus, 
                    target_value = value,
-                   timestamp,
+                   upload_timestamp,
                    disagg_type,
                    resultstatus_inclusive,
                    top_level)
