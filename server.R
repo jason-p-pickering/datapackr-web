@@ -46,6 +46,12 @@ shinyServer(function(input, output, session) {
     r<-saveTimeStampLogToS3(vr)
     timestampUploadUI(r)
     sendMERDataToPAW(vr,config)
+    r<-archiveDataPacktoS3(d,inFile$datapath,config)
+    archivDataPackErrorUI(r)
+    r<-validationSummary(d,config)
+    validationSummaryUI(r)
+    r<-saveDATIMExportToS3(d)
+    datimExportUI(r)
   })
   
   observeEvent(input$login_button, {
@@ -126,8 +132,8 @@ shinyServer(function(input, output, session) {
   
   validate<-function() {
     
-    # shinyjs::hide("downloadFlatPack")
-    # shinyjs::hide("downloadDataPack")
+    shinyjs::hide("downloadFlatPack")
+    shinyjs::hide("downloadDataPack")
     shinyjs::hide("send_paw")
     shinyjs::hide("vr_rules")
     shinyjs::hide("modality_summary")
