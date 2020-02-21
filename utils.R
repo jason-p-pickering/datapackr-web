@@ -393,6 +393,7 @@ modalitySummaryChart <- function(df) {
   
   df %>% 
     dplyr::filter(!is.na(hts_modality)) %>%
+    dplyr::filter(resultstatus != "Known at Entry Positive") %>% 
     dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
     dplyr::summarise(value = sum(value)) %>%
     dplyr::ungroup() %>%
@@ -697,6 +698,7 @@ validationSummary<-function(vr,config) {
   imbalancedDistribution<-NROW(vr$tests$imbalancedDistribution)
   no_targets<-NROW(vr$tests$noTargets)
   undistributed<-NROW(vr$tests$undistributed)
+  tx_new_invalid_lt1_sources<-NROW(d$tests$tx_new_invalid_lt1_sources)
   
   validation_summary<-tibble::tribble(~validation_issue_category, ~count,
                                       "Non-numeric values", non_numeric,
@@ -708,7 +710,8 @@ validationSummary<-function(vr,config) {
                                       "Imbalanced distribution",imbalancedDistribution,
                                       "Targets with missing distribution",no_targets,
                                       "Invalid dedupes",invalid_dedupes,
-                                      "Undistributed targets",undistributed)
+                                      "Undistributed targets",undistributed,
+                                      "TX_NEW for <01 year olds being targeted through method other than EID",NROW(d$tests$tx_new_invalid_lt1_sources))
   validation_summary %<>%
     mutate(ou = vr$info$datapack_name,
            ou_id = vr$info$country_uids,
