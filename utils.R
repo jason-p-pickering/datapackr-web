@@ -389,6 +389,35 @@ adornMERData <- function(d){
   
 }
 
+
+modalitySummaryTable<-function(df){
+  
+  hts<- df %>% 
+    dplyr::filter(!is.na(hts_modality)) %>%
+    dplyr::filter(resultstatus != "Known at Entry Positive") %>% 
+    dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
+    dplyr::summarise(value = sum(value)) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
+    dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>% 
+    tidyr::pivot_wider(names_from = resultstatus_inclusive, values_from = value ) %>% 
+    dplyr::mutate(yield = Positive/(Negative + Positive) * 100,
+                  modality_share = Positive / sum(Positive) * 100 ,
+                  Total = Positive + Negative) %>% 
+    dplyr::select(hts_modality,Positive,Total,yield,modality_share)
+  
+  hts_total<- hts %>% 
+    dplyr::select(Positive,Total) %>% 
+    dplyr::mutate(hts_modality = "Total") %>% 
+    dplyr::group_by(hts_modality) %>% 
+    dplyr::summarise_all(sum) %>% 
+    dplyr::mutate(yield = Positive/Total * 100,
+                  modality_share = 100)
+  
+  dplyr::bind_rows(hts,hts_total)
+  
+}
+
 modalitySummaryChart <- function(df) {
   
   df %>% 
@@ -462,10 +491,8 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   })
   
   return(r)
- 
+  
 }
-
-
 
 archivDataPackErrorUI <- function(r) {
   if (!r) {
@@ -474,7 +501,7 @@ archivDataPackErrorUI <- function(r) {
   }
 }
 
-  saveTimeStampLogToS3<-function(d) {
+saveTimeStampLogToS3<-function(d) {
   #Write an archived copy of the file
   s3<-paws::s3()
   tags<-c("tool","country_uids","cop_year","has_error","sane_name")
@@ -530,7 +557,7 @@ timestampUploadUI<-function(r) {
     showModal(modalDialog(title = "Error",
                           "Timestamp log could not be saved to S3."))
   }
-
+  
 }
 
 getPSNUList<-function() {
@@ -624,7 +651,7 @@ sendMERDataToPAW<-function(vr,config) {
   #Write the flatpacked output
   tmp <- tempfile()
   mer_data<-prepareFlatMERExport(vr)
-
+  
   #Need better error checking here I think. 
   write.table(
     mer_data,
@@ -698,7 +725,6 @@ validationSummary<-function(vr,config) {
   imbalancedDistribution<-NROW(vr$tests$imbalancedDistribution)
   no_targets<-NROW(vr$tests$noTargets)
   undistributed<-NROW(vr$tests$undistributed)
-  tx_new_invalid_lt1_sources<-NROW(d$tests$tx_new_invalid_lt1_sources)
   
   validation_summary<-tibble::tribble(~validation_issue_category, ~count,
                                       "Non-numeric values", non_numeric,
@@ -710,8 +736,7 @@ validationSummary<-function(vr,config) {
                                       "Imbalanced distribution",imbalancedDistribution,
                                       "Targets with missing distribution",no_targets,
                                       "Invalid dedupes",invalid_dedupes,
-                                      "Undistributed targets",undistributed,
-                                      "TX_NEW for <01 year olds being targeted through method other than EID",NROW(d$tests$tx_new_invalid_lt1_sources))
+                                      "Undistributed targets",undistributed)
   validation_summary %<>%
     mutate(ou = vr$info$datapack_name,
            ou_id = vr$info$country_uids,
@@ -810,14 +835,14 @@ saveDATIMExportToS3<-function(d) {
     flog.info("DATIM Export could not be sent to  S3",name = "datapack")
     flog.info(err, name = "datapack")
     FALSE
-    })
+  })
   
   unlink(tmp)
   
   return(r)
   
-  }
-  
+}
+
 datimExportUI<-function(r) {
   if (!r) {
     showModal(modalDialog(title = "Error",

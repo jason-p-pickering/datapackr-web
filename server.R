@@ -105,12 +105,13 @@ shinyServer(function(input, output, session) {
             tabPanel("Messages", tags$ul(uiOutput('messages'))),
             tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules")),
-            tabPanel("HTS Modality Summary", plotOutput("modality_summary"))
+            tabPanel("HTS Summary Chart", plotOutput("modality_summary")),
+            tabPanel("HTS Summary Table",dataTableOutput("modality_table"))
             
           ))
         ))
-  }
-})
+    }
+  })
   
   user_input <- reactiveValues(authenticated = FALSE, status = "")
   
@@ -136,6 +137,8 @@ shinyServer(function(input, output, session) {
     shinyjs::hide("send_paw")
     shinyjs::hide("vr_rules")
     shinyjs::hide("modality_summary")
+    shinyjs::hide("modality_table")
+    
     
     if (!ready$ok) {
       shinyjs::disable("validate")
@@ -203,6 +206,7 @@ shinyServer(function(input, output, session) {
           shinyjs::show("downloadFlatPack")
           shinyjs::show("vr_rules")
           shinyjs::show("modality_summary")
+          shinyjs::show("modality_table")
           shinyjs::show("send_paw")
           shinyjs::enable("send_paw")
           #shinyjs::show("downloadDataPack")
@@ -232,6 +236,39 @@ shinyServer(function(input, output, session) {
     }
     
   },height = 400,width = 600)
+  
+  output$modality_table<-DT::renderDataTable({
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      
+      table_formatted<-modalitySummaryTable(vr$data$distributedMER) %>%
+        dplyr::mutate(
+          Positive = format( Positive ,big.mark=',', scientific=FALSE),
+          Total = format( Total ,big.mark=',', scientific=FALSE),
+          yield = format(round(yield, 2), nsmall = 2),
+          modality_share = format(round(modality_share, 2), nsmall = 2)) %>%
+        dplyr::select(Modality = hts_modality,
+                      Positive,
+                      Total,
+                      "Yield (%)"= yield,
+                      "Percent of HTS_POS" = modality_share)
+      
+      DT::datatable(table_formatted,
+                    options = list(pageLength = 25,columnDefs = list(list(
+                      className = 'dt-right', targets = 2),
+                      list(
+                        className = 'dt-right', targets = 3),
+                      list(
+                        className = 'dt-right', targets = 4),
+                      list(
+                        className = 'dt-right', targets = 5)
+                    )))
+    } else {
+      NULL
+    }
+  })
   
   output$indicator_summary<-DT::renderDataTable({
     
@@ -359,6 +396,14 @@ shinyServer(function(input, output, session) {
         openxlsx::writeData(wb = wb,
                             sheet = "DATIM export",x = datim_export)
         
+        openxlsx::addWorksheet(wb,"Rounding diffs")
+        openxlsx::writeData(wb = wb,
+                            sheet = "Rounding diffs",x = d$tests$PSNUxIM_rounding_diffs)
+        
+        openxlsx::addWorksheet(wb,"HTS Summary")
+        openxlsx::writeData(wb = wb,
+                            sheet = "HTS Summary", x = modalitySummaryTable(d$data$distributedMER))
+        
       }
       
       datapack_name <-d$info$datapack_name
@@ -401,4 +446,4 @@ shinyServer(function(input, output, session) {
       }
     }
   })
-  })
+})
