@@ -137,7 +137,7 @@ shinyServer(function(input, output, session) {
     
     shinyjs::hide("downloadFlatPack")
     shinyjs::hide("downloadDataPack")
-    shinyjs::show("download_messages")
+    shinyjs::hide("download_messages")
     shinyjs::hide("send_paw")
     shinyjs::hide("vr_rules")
     shinyjs::hide("modality_summary")
