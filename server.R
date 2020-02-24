@@ -37,6 +37,7 @@ shinyServer(function(input, output, session) {
     shinyjs::enable("file1")
     shinyjs::disable("validate")
     shinyjs::hide("downloadFlatPack")
+    shijyjs::hide("download_messages")
     shinyjs::hide("send_paw")
     ready$ok<-FALSE
   })
@@ -96,6 +97,8 @@ shinyServer(function(input, output, session) {
             actionButton("reset_input", "Reset inputs"),
             tags$hr(),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
+            downloadButton("download_messages","Download validation messages"),
+            tags$hr(),
             actionButton("send_paw", "Send to PAW")
             #downloadButton("downloadDataPack","Regenerate PSNUxIM")
           ),
@@ -204,6 +207,7 @@ shinyServer(function(input, output, session) {
           
           
           shinyjs::show("downloadFlatPack")
+          shinyjs::show("download_messages")
           shinyjs::show("vr_rules")
           shinyjs::show("modality_summary")
           shinyjs::show("modality_table")
@@ -446,4 +450,16 @@ shinyServer(function(input, output, session) {
       }
     }
   })
+  
+  
+  output$download_messages <- downloadHandler(
+    filename = function(){
+      paste("DataPack_Validation_Messages_", Sys.Date(), ".txt", sep = "")
+    },
+    content = function(file) {
+      vr<-validation_results()
+      
+      writeLines(vr$info$warning_msg, file)
+    }
+  )
 })
