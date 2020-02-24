@@ -704,44 +704,21 @@ sendMERDataToPAW<-function(vr,config) {
 validationSummary<-function(vr,config) {
   
   
-  sheets_out_of_order<-sum(vr$tests$sheets_check == FALSE)
+  tests_rows<-purrr::map(vr$tests,NROW) %>% 
+    plyr::ldply (., data.frame) %>% 
+    `colnames<-`(c("test_name","count"))
   
-  columns_out_of_order<-purrr::map(vr$tests$col_check,function(x) purrr::pluck(x,"order_check")) %>% 
-    purrr::map(.,function(x) !x) %>% 
-    purrr::map(.,function(x) sum(x)) %>% 
-    tibble::enframe() %>% 
-    tidyr::unnest(cols=c(value)) %>% 
-    dplyr::filter(value != 0) %>% 
-    NROW(.)
+  tests_names<-purrr::map(vr$tests,function(x) attr(x,"test_name"))%>% 
+    plyr::ldply (., data.frame) %>% 
+    `colnames<-`(c("test_name","validation_issue_category"))
   
-  non_numeric<-length(vr$tests$non_numeric)
   
-  validation_rule_issues<-NROW(vr$datim$vr_rules_check)
-  
-  invalid_dedupes<-NROW(vr$tests$invalid_dedupes)
-  
-  invalid_DSDTA<-NROW(vr$tests$invalid_DSDTA)
-  negative_distributed_targets<-NROW(vr$tests$negative_distributed_targets)
-  imbalancedDistribution<-NROW(vr$tests$imbalancedDistribution)
-  no_targets<-NROW(vr$tests$noTargets)
-  undistributed<-NROW(vr$tests$undistributed)
-  
-  validation_summary<-tibble::tribble(~validation_issue_category, ~count,
-                                      "Non-numeric values", non_numeric,
-                                      "Sheets out of order", sheets_out_of_order,
-                                      "Sheets with columns out of order", columns_out_of_order,
-                                      "Validation rule issues",validation_rule_issues,
-                                      "Invalid DSD/TA", invalid_DSDTA,
-                                      "Negative distributed targets",negative_distributed_targets,
-                                      "Imbalanced distribution",imbalancedDistribution,
-                                      "Targets with missing distribution",no_targets,
-                                      "Invalid dedupes",invalid_dedupes,
-                                      "Undistributed targets",undistributed)
-  validation_summary %<>%
-    mutate(ou = vr$info$datapack_name,
-           ou_id = vr$info$country_uids,
-           country_name = vr$info$datapack_name,
-           country_uid = vr$info$country_uids )
+  validation_summary <- dplyr::left_join(tests_names,tests_rows,by="test_name") %>% 
+    dplyr::mutate(ou = vr$info$datapack_name,
+                  ou_id = vr$info$country_uids,
+                  country_name = vr$info$datapack_name,
+                  country_uid = vr$info$country_uids ) %>% 
+    dplyr::filter(count > 0)
   
   tmp <- tempfile()
   #Need better error checking here I think. 
