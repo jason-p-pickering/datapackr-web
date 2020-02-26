@@ -18,19 +18,19 @@ options("baseurl" = config$baseurl)
 flog.appender(appender.file(config$log_path), name="datapack")
 
 DHISLogin <- function(baseurl, username, password) {
-  httr::set_config(httr::config(http_version = 0))
-  url <- URLencode(URL = paste0(config$baseurl, "api/me"))
-  #Logging in here will give us a cookie to reuse
-  r <- httr::GET(url,
-                 httr::authenticate(username, password),
-                 httr::timeout(60))
-  if (r$status != 200L) {
-    return(FALSE)
-  } else {
-    me <- jsonlite::fromJSON(httr::content(r, as = "text"))
-    options("organisationUnit" = me$organisationUnits$id)
-    return(TRUE)
-  }
+    httr::set_config(httr::config(http_version = 0))
+    url <- URLencode(URL = paste0(config$baseurl, "api/me"))
+    #Logging in here will give us a cookie to reuse
+    r <- httr::GET(url,
+                   httr::authenticate(username, password),
+                   httr::timeout(60))
+    if (r$status != 200L) {
+      return(FALSE)
+    } else {
+      me <- jsonlite::fromJSON(httr::content(r, as = "text"))
+      options("organisationUnit" = me$organisationUnits$id)
+      return(TRUE)
+    }
 }
 
 filterZeros <- function(d) {
@@ -163,168 +163,11 @@ validateMechanisms<-function(d) {
   
 }
 
-getMechanismView<-function() {
-  
-  cached_mechs <- paste0(config$deploy_location,"mechs.rds")
-  
-  if ( file.access(cached_mechs,4) == 0 ) {
-    
-    readRDS(cached_mechs)
-    
-  } else {
-    
-    # mechs<- paste0(getOption("baseurl"),"api/categoryOptionCombos?filter=categoryCombo.id:eq:wUpfppgjEza&fields=code,name,id,categoryOptions[startDate,endDate,organisationUnits[id,name]]&paging=false") %>%
-    #   URLencode(.) %>%
-    #   httr::GET(., httr::timeout(60)) %>%
-    #   httr::content(.,"text") %>%
-    #   jsonlite::fromJSON(., flatten = TRUE) %>%
-    #   purrr::pluck(.,"categoryOptionCombos")
-    # 
-    # mech_has_ou <- mechs %>%
-    #   purrr::pluck(.,"categoryOptions") %>%
-    #   purrr::map(.,"organisationUnits") %>%
-    #   purrr::flatten(.) %>%
-    #   purrr::map(., function(x) { class(x) == "data.frame" }) %>%
-    #   unlist(.)
-    # 
-    # mechs %<>% dplyr::filter(mech_has_ou)
-    # 
-    # mechs$startdate <-
-    #   as.Date(sapply(mechs$categoryOptions, function(x)
-    #     ifelse(is.null(x$startDate), "1900-01-01", x$startDate)),
-    #     "%Y-%m-%d")
-    # mechs$enddate <-
-    #   as.Date(sapply(mechs$categoryOptions, function(x)
-    #     ifelse(is.null(x$endDate), "1900-01-01", x$endDate)),
-    #     "%Y-%m-%d")
-    # 
-    # 
-    # mechs_ous<- mechs %>%
-    #   purrr::pluck(.,"categoryOptions") %>%
-    #   purrr::map(.,"organisationUnits") %>%
-    #   purrr::flatten_dfr(.,.id="foo") %>%
-    #   dplyr::select("operating_unit"=name,
-    #                 "operating_unit_uid"=id)
-    # 
-    # mechs %<>% dplyr::select(-categoryOptions) %>%
-    #   dplyr::bind_cols(.,mechs_ous) %>%
-    #   dplyr::rename(mechanism_code = code)
-    
-    paste0(getOption("baseurl"), "api/sqlViews/fgUtV6e9YIX/data.csv") %>%
-      httr::GET() %>%
-      httr::content(., "text") %>%
-      readr::read_csv(col_names = TRUE) %>%
-      dplyr::rename(mechanism_desc = mechanism,
-                    attributeOptionCombo = uid,
-                    mechanism_code = code,
-                    partner_desc = partner,
-                    partner_id = primeid)
-    # mechs %<>% dplyr::left_join(mechs_partners,by="mechanism_code")
-  }
-  
-  
-}
-
-adornMechanisms <- function(d) {
-  
-  mechs<-getMechanismView() %>% 
-    dplyr::select(-ou,-startdate,-enddate)
-  
-  dplyr::left_join( d , mechs, by = "mechanism_code") %>% 
-    dplyr::mutate(mechanism_desc = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
-                                                    TRUE ~ mechanism_desc),
-                  partner_desc = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
-                                                  TRUE ~ partner_desc),
-                  partner_id = dplyr::case_when(mechanism_code == "99999" ~ '99999',
-                                                TRUE ~ partner_id),
-                  agency = dplyr::case_when(mechanism_code == "99999" ~ 'Dedupe approximation',
-                                            TRUE ~ agency))
-  
-  
-}
-
-getCOGSMap<-function(uid) {
-  
-  r<-paste0(getOption("baseurl"),"api/categoryOptionGroupSets/",uid,
-            "?fields=id,name,categoryOptionGroups[id,name,categoryOptions[id,name,categoryOptionCombos[id,name]]") %>%
-    URLencode(.) %>%
-    httr::GET(.) %>%
-    httr::content(.,"text") %>%
-    jsonlite::fromJSON(.,flatten = TRUE) 
-  
-  dim_name<- r$name
-  dim_id<- r$id
-  
-  cogs <- r %>% purrr::pluck(.,"categoryOptionGroups") %>% dplyr::select(id,name)
-  
-  cogs_cocs_map<-list()
-  
-  for (i in 1:NROW(cogs) ) {
-    
-    cos_cocs <- r %>%
-      purrr::pluck(.,"categoryOptionGroups") %>% 
-      purrr::pluck(.,"categoryOptions") %>%
-      purrr::pluck(., i) %>% 
-      purrr::pluck(.,"categoryOptionCombos") %>%
-      do.call(rbind.data.frame,.) %>%
-      dplyr::distinct() %>%
-      dplyr::select("category_option_combo"=name,"coc_uid"=id)
-    
-    cos_cocs$category_option_group_name<-cogs[i,"name"]
-    cos_cocs$category_option_group_uid<-cogs[i,"id"]
-    cogs_cocs_map<-rlist::list.append(cogs_cocs_map,cos_cocs)
-  }
-  
-  cogs_cocs_map %<>% do.call(rbind.data.frame,.)
-  
-  return(list(dimension_name=r$name,
-              dimension_id=r$id,
-              dimension_map= cogs_cocs_map))
-  
-}
-
-getDEGSMap <- function(uid) {
-  
-  r <- paste0(getOption("baseurl"),"api/dataElementGroupSets/",uid,"?fields=id,name,dataElementGroups[name,dataElements[id]]&paging=false") %>%
-    URLencode(.) %>%
-    httr::GET(.) %>%
-    httr::content(.,"text") %>%
-    jsonlite::fromJSON(.,flatten = TRUE) 
-  
-  r %>%
-    purrr::pluck(.,"dataElementGroups") %>% 
-    dplyr::mutate_if(is.list, purrr::simplify_all) %>% 
-    tidyr::unnest(cols = c(dataElements)) %>%
-    dplyr::distinct() %>%
-    dplyr::mutate(type=make.names(r$name))
-  
-}
-
-#Used with permission from @achafetz  
-#https://github.com/USAID-OHA-SI/tameDP/blob/master/R/clean_indicators.R
-
 adornMERData <- function(d){
   
   if ( is.null(d) ) { return(NULL) }
-  
-  hiv_specific<-getCOGSMap("bDWsPYyXgWP") %>% #HIV Test Status (Specific)
-    purrr::pluck("dimension_map") %>%
-    dplyr::select("categoryoptioncombouid"=coc_uid,
-                  "resultstatus"=category_option_group_name) %>%
-    dplyr::mutate(resultstatus = stringr::str_replace(resultstatus,"\\(Specific\\)","")) %>%
-    dplyr::mutate(resultstatus = stringr::str_replace(resultstatus,"HIV","")) %>%
-    dplyr::mutate(resultstatus = stringr::str_trim(resultstatus))
-  
-  
-  hiv_inclusive<-getCOGSMap("ipBFu42t2sJ") %>% # HIV Test Status (Inclusive)
-    purrr::pluck("dimension_map") %>%
-    dplyr::select("categoryoptioncombouid"=coc_uid,
-                  "resultstatus_inclusive"=category_option_group_name) %>%
-    dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"\\(Inclusive\\)","")) %>%
-    dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"HIV","")) %>%
-    dplyr::mutate(resultstatus_inclusive = stringr::str_replace(resultstatus_inclusive,"Status","")) %>%
-    dplyr::mutate(resultstatus_inclusive = stringr::str_trim(resultstatus_inclusive))
-  
+    
+   
   #Classify all dedupe as DSD
   d$data$distributedMER %<>% dplyr::mutate(support_type = dplyr::case_when(mechanism_code == "99999" ~ 'DSD',
                                                                            TRUE ~ support_type))
@@ -349,37 +192,7 @@ adornMERData <- function(d){
   }
   
   # %>% dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
-  #Join category option group sets
-  df  <- df %>% dplyr::left_join(hiv_inclusive,by="categoryoptioncombouid") %>%
-    dplyr::left_join(hiv_specific,by="categoryoptioncombouid")
-  
-  #Data element group set dimension adornment  
-  cached_degs<-paste0(config$deploy_location,"degs_map.rds")
-  
-  if ( file.access(cached_degs,4) == 0 ) {
-    degs_map <-readRDS(cached_degs)
-  } else {
-    
-    data_element_dims <-
-      c("HWPJnUTMjEq",
-        "LxhLO68FcXm",
-        "gIBfzXabKkt")
-    
-    degs_map <- purrr::map_dfr(data_element_dims,getDEGSMap) %>% 
-      tidyr::spread(type,name,fill=NA) 
-    #Remapping of column names
-    from<-c("dataElements",
-            "Disaggregation.Type", 
-            "Technical.Area",
-            "Top.Level..USE.ONLY.for.FY20.Results.FY21.Targets.")
-    
-    to<-c("dataelement",
-          "disagg_type",
-          "technical_area",
-          "top_level")
-    
-    names(degs_map) <- plyr::mapvalues(names(degs_map),from,to)
-  }
+
   
   d$data$distributedMER <-df %>% 
     dplyr::left_join( degs_map, by = "dataelement") %>%
@@ -388,7 +201,6 @@ adornMERData <- function(d){
   return(d)
   
 }
-
 
 modalitySummaryTable<-function(df){
   
@@ -560,53 +372,53 @@ timestampUploadUI<-function(r) {
   
 }
 
-getPSNUList<-function() {
-  datapackr::valid_PSNUs %>%
-    dplyr::mutate(
-      ou_id = purrr::map_chr(ancestors, list("id", 3), .default = NA),
-      ou = purrr::map_chr(ancestors, list("name", 3), .default = NA),
-      snu1_id = dplyr::if_else(
-        condition = is.na(purrr::map_chr(ancestors, list("id",4), .default = NA)),
-        true = psnu_uid,
-        false = purrr::map_chr(ancestors, list("id",4), .default = NA)),
-      snu1 = dplyr::if_else(
-        condition = is.na(purrr::map_chr(ancestors, list("name",4), .default = NA)),
-        true = psnu,
-        false = purrr::map_chr(ancestors, list("name",4), .default = NA))
-    ) %>%
-    dplyr::select(ou, ou_id, country_name, country_uid, snu1, snu1_id, psnu, psnu_uid)
-}
+  getPSNUList<-function() {
+    datapackr::valid_PSNUs %>%
+      dplyr::mutate(
+        ou_id = purrr::map_chr(ancestors, list("id", 3), .default = NA),
+        ou = purrr::map_chr(ancestors, list("name", 3), .default = NA),
+        snu1_id = dplyr::if_else(
+          condition = is.na(purrr::map_chr(ancestors, list("id",4), .default = NA)),
+          true = psnu_uid,
+          false = purrr::map_chr(ancestors, list("id",4), .default = NA)),
+        snu1 = dplyr::if_else(
+          condition = is.na(purrr::map_chr(ancestors, list("name",4), .default = NA)),
+          true = psnu,
+          false = purrr::map_chr(ancestors, list("name",4), .default = NA))
+      ) %>%
+      dplyr::select(ou, ou_id, country_name, country_uid, snu1, snu1_id, psnu, psnu_uid)
+  }
 
-adornPSNUs<-function(d) {
-  
-  d$data$distributedMER %<>% dplyr::left_join(getPSNUList(), by = c("psnuid" = "psnu_uid"))
-  
-  prio_defined<-tibble::tribble(
-    ~value,~prioritization,
-    1,"Scale-Up: Saturation",
-    4 ,"Sustained",
-    0 ,"No Prioritization",
-    6, "Sustained: Commodities" ,
-    2, "Scale Up: Aggressive"  ,   
-    5, "Centrally Supported",
-    7,  "Attained" ,
-    8, "Not PEPFAR Supported" )
-  
-  
-  #We need to add the prioritization as a dimension here
-  prio <- d$data$SUBNAT_IMPATT %>% 
-    dplyr::filter(indicator_code == "IMPATT.PRIORITY_SNU.T") %>% 
-    dplyr::select(psnuid,value) %>% 
-    dplyr::left_join(prio_defined,by="value") %>% 
-    dplyr::select(-value)
-  
-  d$data$distributedMER %<>% dplyr::left_join(prio,by="psnuid") %>% 
-    dplyr::mutate(prioritization = case_when(is.na(prioritization) ~ "No Prioritization",
-                                             TRUE ~ prioritization ))
-  
-  d
-  
-}
+  adornPSNUs<-function(d) {
+    
+    d$data$distributedMER %<>% dplyr::left_join(getPSNUList(), by = c("psnuid" = "psnu_uid"))
+    
+    prio_defined<-tibble::tribble(
+      ~value,~prioritization,
+      1,"Scale-Up: Saturation",
+      4 ,"Sustained",
+      0 ,"No Prioritization",
+      6, "Sustained: Commodities" ,
+      2, "Scale Up: Aggressive"  ,   
+      5, "Centrally Supported",
+      7,  "Attained" ,
+      8, "Not PEPFAR Supported" )
+    
+    
+    #We need to add the prioritization as a dimension here
+    prio <- d$data$SUBNAT_IMPATT %>% 
+      dplyr::filter(indicator_code == "IMPATT.PRIORITY_SNU.T") %>% 
+      dplyr::select(psnuid,value) %>% 
+      dplyr::left_join(prio_defined,by="value") %>% 
+      dplyr::select(-value)
+    
+    d$data$distributedMER %<>% dplyr::left_join(prio,by="psnuid") %>% 
+      dplyr::mutate(prioritization = case_when(is.na(prioritization) ~ "No Prioritization",
+                                               TRUE ~ prioritization ))
+    
+    d
+    
+  }
 
 prepareFlatMERExport<-function(vr) {
   
@@ -704,21 +516,21 @@ sendMERDataToPAW<-function(vr,config) {
 validationSummary<-function(vr,config) {
   
   
-  tests_rows<-purrr::map(vr$tests,NROW) %>% 
-    plyr::ldply (., data.frame) %>% 
-    `colnames<-`(c("test_name","count"))
-  
-  tests_names<-purrr::map(vr$tests,function(x) attr(x,"test_name"))%>% 
-    plyr::ldply (., data.frame) %>% 
-    `colnames<-`(c("test_name","validation_issue_category"))
-  
-  
-  validation_summary <- dplyr::left_join(tests_names,tests_rows,by="test_name") %>% 
-    dplyr::mutate(ou = vr$info$datapack_name,
-                  ou_id = vr$info$country_uids,
-                  country_name = vr$info$datapack_name,
-                  country_uid = vr$info$country_uids ) %>% 
-    dplyr::filter(count > 0)
+    tests_rows<-purrr::map(vr$tests,NROW) %>% 
+      plyr::ldply (., data.frame) %>% 
+      `colnames<-`(c("test_name","count"))
+    
+    tests_names<-purrr::map(vr$tests,function(x) attr(x,"test_name"))%>% 
+      plyr::ldply (., data.frame) %>% 
+      `colnames<-`(c("test_name","validation_issue_category"))
+    
+    
+    validation_summary <- dplyr::left_join(tests_names,tests_rows,by="test_name") %>% 
+      dplyr::mutate(ou = vr$info$datapack_name,
+                    ou_id = vr$info$country_uids,
+                    country_name = vr$info$datapack_name,
+                    country_uid = vr$info$country_uids ) %>% 
+      dplyr::filter(count > 0)
   
   tmp <- tempfile()
   #Need better error checking here I think. 

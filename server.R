@@ -338,7 +338,7 @@ shinyServer(function(input, output, session) {
   #       paste0("Regeneration of Datapack requested for ", d$info$datapack_name) 
   #       ,
   #       name = "datapack")
-  #     d <- packSNUxIM(d)
+  #     d <- writePNUxIM(d)
   #     flog.info(
   #       paste0("Datapack reloaded for for ", d$info$datapack_name) ,
   #       name = "datapack")
