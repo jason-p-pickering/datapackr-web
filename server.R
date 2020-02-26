@@ -46,9 +46,9 @@ shinyServer(function(input, output, session) {
     d <- validation_results()
     r<-saveTimeStampLogToS3(d)
     timestampUploadUI(r)
-    sendMERDataToPAW(d,config)
-    archivDataPackErrorUI(r)
-    r<-validationSummary(d,config)
+    r<-sendMERDataToPAW(d,config)
+    archiveDataPackErrorUI(r)
+    r<-sendValidationSummary(d,config)
     validationSummaryUI(r)
     r<-saveDATIMExportToS3(d)
     datimExportUI(r)
@@ -174,15 +174,12 @@ shinyServer(function(input, output, session) {
         d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
         d$info$sane_name<-paste0(stringr::str_extract_all(d$info$datapack_name,"[A-Za-z0-9_]",
                                                           simplify = TRUE),sep="",collapse="")
+        #Keep this until we can change the schema
+        
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
         
         if ( d$info$has_psnuxim ) {
           flog.info("Datapack with PSNUxIM tab found.")
-          
-          #TODO: Where do we handle rounding? Probably in datapackr?
-          # Some values should not be rounded. How to determine this? 
-          can_round <- !is.na(suppressWarnings(as.numeric(d$data$distributedMER$value)))
-          d$data$distributedMER$value[can_round]<-round(d$data$distributedMER$value[can_round])
           
           incProgress(0.1, detail = ("Checking validation rules"))
           Sys.sleep(0.5)
@@ -190,22 +187,13 @@ shinyServer(function(input, output, session) {
           incProgress(0.1,detail="Validating mechanisms")
           Sys.sleep(0.5)
           d <- validateMechanisms(d)
-          incProgress(0.1, detail = ("Making mechanisms prettier"))
-          Sys.sleep(0.5)
-          d$data$distributedMER %<>% adornMechanisms()
-          incProgress(0.1, detail = ("Running dimensional transformation"))
-          Sys.sleep(0.5)
-          d %<>% adornMERData()
-          incProgress(0.1, detail = ("Running spatial transformation"))
-          Sys.sleep(0.5)
-          d %<>% adornPSNUs()
           incProgress(0.1, detail = ("Saving a copy of your submission to the archives"))
           Sys.sleep(0.5)
           r<-archiveDataPacktoS3(d,inFile$datapath,config)
-          archivDataPackErrorUI(r)
+          archiveDataPackErrorUI(r)
           incProgress(0.1, detail = (praise()))
           Sys.sleep(1)
-          
+          d<-prepareFlatMERExport(d)
           
           shinyjs::show("downloadFlatPack")
           shinyjs::show("download_messages")
@@ -233,7 +221,7 @@ shinyServer(function(input, output, session) {
     if (!inherits(vr,"error") & !is.null(vr)){
       vr  %>% 
         purrr::pluck(.,"data") %>%
-        purrr::pluck(.,"distributedMER") %>%
+        purrr::pluck(.,"analytics") %>%
         modalitySummaryChart()
       
     } else {
@@ -248,7 +236,7 @@ shinyServer(function(input, output, session) {
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
-      table_formatted<-modalitySummaryTable(vr$data$distributedMER) %>%
+      table_formatted<-modalitySummaryTable(vr$data$analytics) %>%
         dplyr::mutate(
           Positive = format( Positive ,big.mark=',', scientific=FALSE),
           Total = format( Total ,big.mark=',', scientific=FALSE),
@@ -320,31 +308,31 @@ shinyServer(function(input, output, session) {
     
   })
   
-  # output$downloadDataPack <- downloadHandler(
-  #   filename = function() {
-  #     
-  #     d<-validation_results()
-  #     prefix <-d$info$sane_name
-  #     date<-format(Sys.time(),"%Y%m%d_%H%M%S")
-  #     paste0(paste(prefix,date,sep="_"),".xlsx")
-  #     
-  #   },
-  #   content = function(file) {
-  #     
-  #     d <- validation_results()
-  #     d$keychain$snuxim_model_data_path = config$snuxim_model
-  #     
-  #     flog.info(
-  #       paste0("Regeneration of Datapack requested for ", d$info$datapack_name) 
-  #       ,
-  #       name = "datapack")
-  #     d <- writePNUxIM(d)
-  #     flog.info(
-  #       paste0("Datapack reloaded for for ", d$info$datapack_name) ,
-  #       name = "datapack")
-  #     openxlsx::saveWorkbook(wb = d$tool$wb, file = file, overwrite = TRUE)
-  #   }
-  # )
+  output$downloadDataPack <- downloadHandler(
+    filename = function() {
+      
+      d<-validation_results()
+      prefix <-d$info$sane_name
+      date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      paste0(paste(prefix,date,sep="_"),".xlsx")
+      
+    },
+    content = function(file) {
+      
+      d <- validation_results()
+      
+      
+      flog.info(
+        paste0("Regeneration of Datapack requested for ", d$info$datapack_name)
+        ,
+        name = "datapack")
+      d <- writePSNUxIM(d,snuxim_model_data_path = config$snuxim_model )
+      flog.info(
+        paste0("Datapack reloaded for for ", d$info$datapack_name) ,
+        name = "datapack")
+      openxlsx::saveWorkbook(wb = d$tool$wb, file = file, overwrite = TRUE)
+    }
+  )
   
   
   output$downloadFlatPack <- downloadHandler(
@@ -381,11 +369,10 @@ shinyServer(function(input, output, session) {
       
       if (has_psnu) {
         
-        distributed_mer<- prepareFlatMERExport(d)
         
         openxlsx::addWorksheet(wb,"Distributed MER Data")
         openxlsx::writeDataTable(wb = wb,
-                                 sheet = "Distributed MER Data",x = distributed_mer)
+                                 sheet = "Distributed MER Data",x = d$data$analytics)
         
         validation_rules<- d %>% 
           purrr::pluck(.,"datim") %>% 
@@ -394,7 +381,9 @@ shinyServer(function(input, output, session) {
         openxlsx::addWorksheet(wb,"Validation rules")
         openxlsx::writeData(wb = wb,
                             sheet = "Validation rules",x = validation_rules)
+        
         d$datim$MER$value<-as.character(d$datim$MER$value)
+        d$datim$subnat_impatt$value<-as.character(d$datim$subnat_impatt$value)
         datim_export<-dplyr::bind_rows(d$datim$MER,d$datim$subnat_impatt)
         
         openxlsx::addWorksheet(wb,"DATIM export")
@@ -407,7 +396,7 @@ shinyServer(function(input, output, session) {
         
         openxlsx::addWorksheet(wb,"HTS Summary")
         openxlsx::writeData(wb = wb,
-                            sheet = "HTS Summary", x = modalitySummaryTable(d$data$distributedMER))
+                            sheet = "HTS Summary", x = modalitySummaryTable(d$data$analytics))
         
       }
       

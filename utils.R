@@ -15,28 +15,23 @@ config <- config::get()
 Sys.setenv(AWS_REGION = config$aws_region)
 
 options("baseurl" = config$baseurl)
+options("support_files_directory" = config$deploy_location)
 flog.appender(appender.file(config$log_path), name="datapack")
 
 DHISLogin <- function(baseurl, username, password) {
-    httr::set_config(httr::config(http_version = 0))
-    url <- URLencode(URL = paste0(config$baseurl, "api/me"))
-    #Logging in here will give us a cookie to reuse
-    r <- httr::GET(url,
-                   httr::authenticate(username, password),
-                   httr::timeout(60))
-    if (r$status != 200L) {
-      return(FALSE)
-    } else {
-      me <- jsonlite::fromJSON(httr::content(r, as = "text"))
-      options("organisationUnit" = me$organisationUnits$id)
-      return(TRUE)
-    }
-}
-
-filterZeros <- function(d) {
-  
-  d$data <- lapply(d$data,function(x) dplyr::filter(x, value != 0 ))
-  d
+  httr::set_config(httr::config(http_version = 0))
+  url <- URLencode(URL = paste0(config$baseurl, "api/me"))
+  #Logging in here will give us a cookie to reuse
+  r <- httr::GET(url,
+                 httr::authenticate(username, password),
+                 httr::timeout(60))
+  if (r$status != 200L) {
+    return(FALSE)
+  } else {
+    me <- jsonlite::fromJSON(httr::content(r, as = "text"))
+    options("organisationUnit" = me$organisationUnits$id)
+    return(TRUE)
+  }
 }
 
 validatePSNUData <- function(d) {
@@ -137,7 +132,7 @@ validateMechanisms<-function(d) {
   
   #TODO: Removve hard coding of time periods and 
   #filter for the OU as well
-  mechs<-getMechanismView() %>%
+  mechs<-datapackr::getMechanismView() %>%
     dplyr::filter(!is.na(startdate)) %>%
     dplyr::filter(!is.na(enddate)) %>%
     dplyr::filter(startdate <= as.Date('2020-10-01')) %>%
@@ -163,52 +158,13 @@ validateMechanisms<-function(d) {
   
 }
 
-adornMERData <- function(d){
-  
-  if ( is.null(d) ) { return(NULL) }
-    
-   
-  #Classify all dedupe as DSD
-  d$data$distributedMER %<>% dplyr::mutate(support_type = dplyr::case_when(mechanism_code == "99999" ~ 'DSD',
-                                                                           TRUE ~ support_type))
-  
-  
-  #Append the distributed MER data and subnat data together
-  df <- dplyr::bind_rows(d$data$distributedMER,
-                         dplyr::mutate(d$data$SUBNAT_IMPATT,
-                                       mechanism_code = "HllvX50cXC0",
-                                       support_type="DSD"))
-  
-  
-  df %<>%  dplyr::left_join(., ( datapackr::map_DataPack_DATIM_DEs_COCs %>% 
-                                   dplyr::rename(Age = valid_ages.name,
-                                                 Sex = valid_sexes.name,
-                                                 KeyPop = valid_kps.name) ), by=c("Age","Sex","KeyPop","indicator_code","support_type"))
-  #Check for any data elements which do not have UIDs
-  na_dataelement_uids<-dplyr::filter(df,is.na(dataelement)) %>% 
-    dplyr::pull(indicator_code) %>% unique()
-  if ( length(na_dataelement_uids) > 0 ) {
-    flog.warn(paste0("The following indicator codes did not have a data element uid:",paste(na_dataelement_uids,sep="",collapse=",")),name="datapack")
-  }
-  
-  # %>% dplyr::filter(!is.na(dataelement) & !is.na(categoryoptioncombo))
-
-  
-  d$data$distributedMER <-df %>% 
-    dplyr::left_join( degs_map, by = "dataelement") %>%
-    dplyr::mutate( hts_modality=stringr::str_replace(hts_modality," FY20R/FY21T$",""))
-  
-  return(d)
-  
-}
-
 modalitySummaryTable<-function(df){
   
   hts<- df %>% 
     dplyr::filter(!is.na(hts_modality)) %>%
-    dplyr::filter(resultstatus != "Known at Entry Positive") %>% 
+    dplyr::filter(resultstatus_specific != "Known at Entry Positive") %>% 
     dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
-    dplyr::summarise(value = sum(value)) %>%
+    dplyr::summarise(value = sum(target_value)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
     dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>% 
@@ -234,9 +190,9 @@ modalitySummaryChart <- function(df) {
   
   df %>% 
     dplyr::filter(!is.na(hts_modality)) %>%
-    dplyr::filter(resultstatus != "Known at Entry Positive") %>% 
+    dplyr::filter(resultstatus_specific != "Known at Entry Positive") %>% 
     dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
-    dplyr::summarise(value = sum(value)) %>%
+    dplyr::summarise(value = sum(target_value)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
     dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>%
@@ -306,7 +262,7 @@ archiveDataPacktoS3<-function(d,datapath,config) {
   
 }
 
-archivDataPackErrorUI <- function(r) {
+archiveDataPackErrorUI <- function(r) {
   if (!r) {
     showModal(modalDialog(title = "Error",
                           "The DataPack could not be archived."))
@@ -372,57 +328,9 @@ timestampUploadUI<-function(r) {
   
 }
 
-  getPSNUList<-function() {
-    datapackr::valid_PSNUs %>%
-      dplyr::mutate(
-        ou_id = purrr::map_chr(ancestors, list("id", 3), .default = NA),
-        ou = purrr::map_chr(ancestors, list("name", 3), .default = NA),
-        snu1_id = dplyr::if_else(
-          condition = is.na(purrr::map_chr(ancestors, list("id",4), .default = NA)),
-          true = psnu_uid,
-          false = purrr::map_chr(ancestors, list("id",4), .default = NA)),
-        snu1 = dplyr::if_else(
-          condition = is.na(purrr::map_chr(ancestors, list("name",4), .default = NA)),
-          true = psnu,
-          false = purrr::map_chr(ancestors, list("name",4), .default = NA))
-      ) %>%
-      dplyr::select(ou, ou_id, country_name, country_uid, snu1, snu1_id, psnu, psnu_uid)
-  }
-
-  adornPSNUs<-function(d) {
-    
-    d$data$distributedMER %<>% dplyr::left_join(getPSNUList(), by = c("psnuid" = "psnu_uid"))
-    
-    prio_defined<-tibble::tribble(
-      ~value,~prioritization,
-      1,"Scale-Up: Saturation",
-      4 ,"Sustained",
-      0 ,"No Prioritization",
-      6, "Sustained: Commodities" ,
-      2, "Scale Up: Aggressive"  ,   
-      5, "Centrally Supported",
-      7,  "Attained" ,
-      8, "Not PEPFAR Supported" )
-    
-    
-    #We need to add the prioritization as a dimension here
-    prio <- d$data$SUBNAT_IMPATT %>% 
-      dplyr::filter(indicator_code == "IMPATT.PRIORITY_SNU.T") %>% 
-      dplyr::select(psnuid,value) %>% 
-      dplyr::left_join(prio_defined,by="value") %>% 
-      dplyr::select(-value)
-    
-    d$data$distributedMER %<>% dplyr::left_join(prio,by="psnuid") %>% 
-      dplyr::mutate(prioritization = case_when(is.na(prioritization) ~ "No Prioritization",
-                                               TRUE ~ prioritization ))
-    
-    d
-    
-  }
-
-prepareFlatMERExport<-function(vr) {
+prepareFlatMERExport<-function(d) {
   
-  vr$data$distributedMER %>% 
+  d$data$analytics <-  d$data$analytics %>% 
     dplyr::mutate(upload_timestamp = format(Sys.time(),"%Y-%m-%d %H:%M:%S"),
                   fiscal_year = "FY21") %>% 
     dplyr::select( ou,
@@ -438,31 +346,33 @@ prepareFlatMERExport<-function(vr) {
                    mechanism_desc,
                    partner_id,
                    partner_desc,
-                   funding_agency  = agency,
+                   funding_agency,
                    fiscal_year,
-                   dataelement_id  = dataelement,
-                   dataelement_name = dataelement.y,
-                   indicator = technical_area,
+                   dataelement_id ,
+                   dataelement_name,
+                   indicator,
                    numerator_denominator ,
                    support_type ,
                    hts_modality ,
-                   categoryoptioncombo_id = categoryoptioncombouid,
-                   categoryoptioncombo_name = categoryoptioncombo,
-                   age = Age,
-                   sex = Sex, 
-                   key_population = KeyPop,
-                   resultstatus_specific = resultstatus,
-                   upload_timestamp,
+                   categoryoptioncombo_id ,
+                   categoryoptioncombo_name ,
+                   age,
+                   sex, 
+                   key_population ,
+                   resultstatus_specific ,
                    disagg_type,
                    resultstatus_inclusive,
                    top_level,
-                   target_value = value)
+                   target_value,
+                   upload_timestamp)
+  
+  d
 }
 
-sendMERDataToPAW<-function(vr,config) {
+sendMERDataToPAW<-function(d,config) {
   #Write the flatpacked output
   tmp <- tempfile()
-  mer_data<-prepareFlatMERExport(vr)
+  mer_data<-d$data$analytics
   
   #Need better error checking here I think. 
   write.table(
@@ -482,55 +392,35 @@ sendMERDataToPAW<-function(vr,config) {
   
   
   tags<-c("tool","country_uids","cop_year","has_error","sane_name")
-  object_tags<-vr$info[names(vr$info) %in% tags] 
+  object_tags<-d$info[names(d$info) %in% tags] 
   object_tags<-URLencode(paste(names(object_tags),object_tags,sep="=",collapse="&"))
-  object_name<-paste0("processed/",vr$info$sane_name,".csv")
+  object_name<-paste0("processed/",d$info$sane_name,".csv")
   s3<-paws::s3()
   
-  tryCatch({
+  r<-tryCatch({
     foo<-s3$put_object(Bucket = config$s3_bucket,
                        Body = raw_file,
                        Key = object_name,
                        Tagging = object_tags,
                        ContentType = "text/csv")
     flog.info("Flatpack sent to AP", name = "datapack")
-    showModal(
-      modalDialog(
-        "The DataPack has been delivered to PAW.",
-        easyClose = TRUE,
-        footer = NULL
-      )
-    )
-    shinyjs::disable("send_paw")
+    TRUE
   },
   error = function(err) {
     flog.info("Flatpack cannot be sent to AP",name = "datapack")
     flog.info(err, name = "datapack")
-    showModal(modalDialog(title = "Error",
-                          "The DataPack cannot be delivered to PAW."))
+    FALSE
   })
   
   unlink(tmp)
+  
+  return(r)
 }
 
-validationSummary<-function(vr,config) {
+sendValidationSummary<-function(vr,config) {
   
   
-    tests_rows<-purrr::map(vr$tests,NROW) %>% 
-      plyr::ldply (., data.frame) %>% 
-      `colnames<-`(c("test_name","count"))
-    
-    tests_names<-purrr::map(vr$tests,function(x) attr(x,"test_name"))%>% 
-      plyr::ldply (., data.frame) %>% 
-      `colnames<-`(c("test_name","validation_issue_category"))
-    
-    
-    validation_summary <- dplyr::left_join(tests_names,tests_rows,by="test_name") %>% 
-      dplyr::mutate(ou = vr$info$datapack_name,
-                    ou_id = vr$info$country_uids,
-                    country_name = vr$info$datapack_name,
-                    country_uid = vr$info$country_uids ) %>% 
-      dplyr::filter(count > 0)
+  validation_summary<-validationSummary(vr)
   
   tmp <- tempfile()
   #Need better error checking here I think. 
@@ -586,6 +476,7 @@ saveDATIMExportToS3<-function(d) {
   #Write the flatpacked output
   tmp <- tempfile()
   d$datim$MER$value<-as.character(d$datim$MER$value)
+  d$datim$subnat_impatt$value<-as.character(d$datim$subnat_impatt$value)
   datim_export<-dplyr::bind_rows(d$datim$MER,d$datim$subnat_impatt)
   
   #Need better error checking here I think. 
@@ -636,5 +527,8 @@ datimExportUI<-function(r) {
   if (!r) {
     showModal(modalDialog(title = "Error",
                           "DATIM Export could not be sent to S3"))
-  } 
+  } else {
+    showModal(modalDialog(title = "Congrats!",
+                          "Export to PAW was successful."))
+  }
 }
