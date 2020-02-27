@@ -202,8 +202,10 @@ shinyServer(function(input, output, session) {
           shinyjs::show("modality_table")
           shinyjs::show("send_paw")
           shinyjs::enable("send_paw")
-          shinyjs::show("downloadDataPack")
-          shinyjs::enable("downloadDataPack")
+          if (!d$info$has_psnuxim | d$info$missing_psnuxim_combos ) {
+            shinyjs::show("downloadDataPack")
+            shinyjs::enable("downloadDataPack")
+          }
         }
       }
     })
@@ -321,7 +323,6 @@ shinyServer(function(input, output, session) {
       
       d <- validation_results()
       
-      
       flog.info(
         paste0("Regeneration of Datapack requested for ", d$info$datapack_name)
         ,
@@ -330,6 +331,11 @@ shinyServer(function(input, output, session) {
       flog.info(
         paste0("Datapack reloaded for for ", d$info$datapack_name) ,
         name = "datapack")
+      showModal(modalDialog(
+        title = "Important message",
+        "This is an important message!",
+        easyClose = TRUE
+      ))
       openxlsx::saveWorkbook(wb = d$tool$wb, file = file, overwrite = TRUE)
     }
   )
