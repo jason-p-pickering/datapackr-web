@@ -322,16 +322,17 @@ shinyServer(function(input, output, session) {
     content = function(file) {
       
       d <- validation_results()
-      
+      shinyjs::disable("downloadDataPack")
       flog.info(
         paste0("Regeneration of Datapack requested for ", d$info$datapack_name)
         ,
         name = "datapack")
       showModal(modalDialog(
-        title = "Important message",
-        "Do not close this dialog during generation. Please be patient. This will take a while!",
+        title = "Keep Calm and Carry On",
+        "Do not close this dialog or browser window during DataPack generation. This will take a while!",
         easyClose = FALSE,
-        footer = tagList()
+        footer = NULL,
+        size = "l"
       ))
       d <- writePSNUxIM(d,snuxim_model_data_path = config$snuxim_model )
       flog.info(
