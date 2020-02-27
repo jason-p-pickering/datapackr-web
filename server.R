@@ -327,16 +327,17 @@ shinyServer(function(input, output, session) {
         paste0("Regeneration of Datapack requested for ", d$info$datapack_name)
         ,
         name = "datapack")
+      showModal(modalDialog(
+        title = "Important message",
+        "Do not close this dialog during generation. Please be patient. This will take a while!",
+        easyClose = FALSE
+      ))
       d <- writePSNUxIM(d,snuxim_model_data_path = config$snuxim_model )
       flog.info(
         paste0("Datapack reloaded for for ", d$info$datapack_name) ,
         name = "datapack")
-      showModal(modalDialog(
-        title = "Important message",
-        "This is an important message!",
-        easyClose = TRUE
-      ))
       openxlsx::saveWorkbook(wb = d$tool$wb, file = file, overwrite = TRUE)
+      removeModal()
     }
   )
   
