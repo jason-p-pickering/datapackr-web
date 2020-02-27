@@ -360,11 +360,11 @@ prepareFlatMERExport<-function(d) {
                    sex, 
                    key_population ,
                    resultstatus_specific ,
+                   upload_timestamp,
                    disagg_type,
                    resultstatus_inclusive,
                    top_level,
-                   target_value,
-                   upload_timestamp)
+                   target_value)
   
   d
 }
