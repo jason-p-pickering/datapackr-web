@@ -330,7 +330,8 @@ shinyServer(function(input, output, session) {
       showModal(modalDialog(
         title = "Important message",
         "Do not close this dialog during generation. Please be patient. This will take a while!",
-        easyClose = FALSE
+        easyClose = FALSE,
+        footer = tagList()
       ))
       d <- writePSNUxIM(d,snuxim_model_data_path = config$snuxim_model )
       flog.info(
