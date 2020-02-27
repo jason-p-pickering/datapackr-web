@@ -37,7 +37,7 @@ shinyServer(function(input, output, session) {
     shinyjs::enable("file1")
     shinyjs::disable("validate")
     shinyjs::hide("downloadFlatPack")
-    shijyjs::hide("download_messages")
+    shinyjs::hide("download_messages")
     shinyjs::hide("send_paw")
     ready$ok<-FALSE
   })
