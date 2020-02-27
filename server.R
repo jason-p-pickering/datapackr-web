@@ -99,8 +99,8 @@ shinyServer(function(input, output, session) {
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
             downloadButton("download_messages","Download validation messages"),
             tags$hr(),
-            actionButton("send_paw", "Send to PAW")
-            #downloadButton("downloadDataPack","Regenerate PSNUxIM")
+            actionButton("send_paw", "Send to PAW"),
+            downloadButton("downloadDataPack","Regenerate PSNUxIM")
           ),
           mainPanel(tabsetPanel(
             id = "main-panel",
@@ -202,8 +202,8 @@ shinyServer(function(input, output, session) {
           shinyjs::show("modality_table")
           shinyjs::show("send_paw")
           shinyjs::enable("send_paw")
-          #shinyjs::show("downloadDataPack")
-          #shinyjs::enable("downloadDataPack")
+          shinyjs::show("downloadDataPack")
+          shinyjs::enable("downloadDataPack")
         }
       }
     })
