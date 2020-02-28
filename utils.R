@@ -72,7 +72,9 @@ validatePSNUData <- function(d) {
     "Ry93Kc34Zwg",
     "g0XwMGLB5XP",
     "eb02xBNx7bD",
-    "SNzoIyNuanF"
+    "SNzoIyNuanF",
+    "Ry93Kc34Zwg",
+    "WiRJutVpAq4"
   )
   
   if ( NROW(vr_violations) > 0 ) {
