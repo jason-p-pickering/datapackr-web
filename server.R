@@ -39,6 +39,7 @@ shinyServer(function(input, output, session) {
     shinyjs::hide("downloadFlatPack")
     shinyjs::hide("download_messages")
     shinyjs::hide("send_paw")
+    shinyjs::hide("downloadValidationResults")
     ready$ok<-FALSE
   })
   
@@ -97,9 +98,13 @@ shinyServer(function(input, output, session) {
             actionButton("reset_input", "Reset inputs"),
             tags$hr(),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
+            tags$hr(),
             downloadButton("download_messages","Download validation messages"),
             tags$hr(),
+            downloadButton("downloadValidationResults","Download validation report"),
+            tags$hr(),
             actionButton("send_paw", "Send to PAW"),
+            tags$hr(),
             downloadButton("downloadDataPack","Regenerate PSNUxIM")
           ),
           mainPanel(tabsetPanel(
@@ -142,6 +147,7 @@ shinyServer(function(input, output, session) {
     shinyjs::hide("vr_rules")
     shinyjs::hide("modality_summary")
     shinyjs::hide("modality_table")
+    shinyjs::hide("downloadValidationResults")
     
     
     if (!ready$ok) {
@@ -202,6 +208,8 @@ shinyServer(function(input, output, session) {
           shinyjs::show("modality_table")
           shinyjs::show("send_paw")
           shinyjs::enable("send_paw")
+          shinyjs::show("downloadValidationResults")
+          shinyjs::enable("downloadValidationResults")
           if (!d$info$has_psnuxim | d$info$missing_psnuxim_combos ) {
             shinyjs::show("downloadDataPack")
             shinyjs::enable("downloadDataPack")
@@ -295,7 +303,7 @@ shinyServer(function(input, output, session) {
     if (!inherits(vr,"error")  & !is.null(vr)){
       
       vr_results <- vr %>%
-        purrr::pluck(.,"datim") %>%
+        purrr::pluck(.,"tests") %>%
         purrr::pluck(.,"vr_rules_check")
       
     }  else {
@@ -344,6 +352,36 @@ shinyServer(function(input, output, session) {
   )
   
   
+  
+  output$downloadValidationResults <- downloadHandler(
+    filename = function() {
+      
+      prefix <- "validation_results"
+      
+      date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      
+      paste0(paste(prefix,date,sep="_"),".xlsx")
+    },
+    content = function(file) {
+      
+      d <- validation_results()
+      
+      sheets_with_data<-d$tests[lapply(d$tests,NROW) > 0]
+      
+      if (length(sheets_with_data)>0) {
+        openxlsx::write.xlsx(sheets_with_data, file = file)
+      } else {
+        shinyjs::disable("downloadValidationResults")
+        showModal(modalDialog(
+          title = "Perfect score!",
+          "No validation issues, so nothing to download!"
+        ))
+      }
+      
+    }
+  )
+  
+  
   output$downloadFlatPack <- downloadHandler(
     filename = function() {
       
@@ -382,14 +420,6 @@ shinyServer(function(input, output, session) {
         openxlsx::addWorksheet(wb,"Distributed MER Data")
         openxlsx::writeDataTable(wb = wb,
                                  sheet = "Distributed MER Data",x = d$data$analytics)
-        
-        validation_rules<- d %>% 
-          purrr::pluck(.,"datim") %>% 
-          purrr::pluck(.,"vr_rules_check") 
-        
-        openxlsx::addWorksheet(wb,"Validation rules")
-        openxlsx::writeData(wb = wb,
-                            sheet = "Validation rules",x = validation_rules)
         
         d$datim$MER$value<-as.character(d$datim$MER$value)
         d$datim$subnat_impatt$value<-as.character(d$datim$subnat_impatt$value)

@@ -101,7 +101,7 @@ validatePSNUData <- function(d) {
     
     if (NROW(vr_violations) > 0) {
       
-      d$datim$vr_rules_check <- vr_violations  %>%
+      d$tests$vr_rules_check <- vr_violations  %>%
         dplyr::select(name, ou_name, mech_code, formula, diff,abs_diff) %>%
         dplyr::mutate(name = gsub(pattern = " DSD,", "", name)) %>% 
         dplyr::rename("Validation rule" = name,
@@ -121,7 +121,7 @@ validatePSNUData <- function(d) {
         name = "datapack"
       )
     } else {
-      d$datim$vr_rules_check <- NULL
+      d$tests$vr_rules_check <- NULL
       flog.info(
         paste0(
           "No validation rule issues found in ",
