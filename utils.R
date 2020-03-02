@@ -52,71 +52,86 @@ validatePSNUData <- function(d) {
     is_parallel <- TRUE
   } else {
     is_parallel <- FALSE
-  } 
+  }
+  
   vr_violations <- datimvalidation::validateData(d$datim$MER,
                                                  datasets = datasets_uid,
                                                  parallel = is_parallel)
   
-  rules_to_keep <- c(
-    "L76D9NGEPRS",
-    "rVVZmdG1KTb",
-    "zEOFo6X436M",
-    "oVtpQHVVeCV",
-    "r0CC6MQW5zc",
-    "vrS3kAtlJ4F",
-    "WB338HNucS7",
-    "tiagZGzSh6G",
-    "vkFHYHgfqCf",
-    "coODsuNsoXu",
-    "qOnTyseQXv8",
-    "Ry93Kc34Zwg",
-    "g0XwMGLB5XP",
-    "eb02xBNx7bD",
-    "SNzoIyNuanF",
-    "Ry93Kc34Zwg",
-    "WiRJutVpAq4"
-  )
+  # rules_to_keep <- c(
+  #   "L76D9NGEPRS",
+  #   "rVVZmdG1KTb",
+  #   "zEOFo6X436M",
+  #   "oVtpQHVVeCV",
+  #   "r0CC6MQW5zc",
+  #   "vrS3kAtlJ4F",
+  #   "WB338HNucS7",
+  #   "tiagZGzSh6G",
+  #   "vkFHYHgfqCf",
+  #   "coODsuNsoXu",
+  #   "qOnTyseQXv8",
+  #   "Ry93Kc34Zwg",
+  #   "g0XwMGLB5XP",
+  #   "eb02xBNx7bD",
+  #   "SNzoIyNuanF",
+  #   "Ry93Kc34Zwg",
+  #   "WiRJutVpAq4"
+  # )
+  
+  rules_to_ignore<-c("RLXOqAeHN04","KdqWm8ZvWoO")
+  
+  vr_violations<-vr_violations[!(vr_violations$id %in% rules_to_ignore),]
   
   if ( NROW(vr_violations) > 0 ) {
     
-    vr_violations <-
-      vr_violations[vr_violations$id %in% rules_to_keep,] } else {
-        d$datim$vr_rules_check <- NULL
-        return(d)
-      }
-  
-  diff <- gsub(" <= ", "/", vr_violations$formula)
-  vr_violations$diff <-
-    sapply( diff, function(x) {
-      round( ( eval( parse( text = x) ) - 1) * 100, 2 )
-    })
-  
-  vr_violations %<>% dplyr::filter(diff >= 5) 
-  
-  if (NROW(vr_violations) > 0) {
-    d$datim$vr_rules_check <- vr_violations  %>%
-      dplyr::select(name, ou_name, mech_code, formula, diff) %>%
-      dplyr::mutate(name = gsub(pattern = " DSD,", "", name))
-    flog.info(
-      paste0(
-        NROW(vr_violations),
-        " validation rule issues found in ",
-        d$info$datapack_name,
-        " DataPack."
-      ),
-      name = "datapack"
-    )
-  } else {
-    d$datim$vr_rules_check <- NULL
-    flog.info(
-      paste0(
-        "No validation rule issues found in ",
-        d$info$datapack_name,
-        " DataPack."
-      ),
-      name = "datapack"
-    )
-    return(d)
+    # vr_violations <-
+    #   vr_violations[vr_violations$id %in% rules_to_keep,] } else {
+    #     d$datim$vr_rules_check <- NULL
+    #     return(d)
+    #   }
+    
+    diff <- gsub(" <= ", "/", vr_violations$formula)
+    vr_violations$diff <- sapply( diff, function(x) { round( ( eval( parse( text = x ) ) - 1) * 100, 2 ) })
+    
+    #vr_violations %<>% dplyr::filter(diff >= 5)
+    
+    diff <- gsub(" <= ", "-", vr_violations$formula)
+    vr_violations$abs_diff <- sapply( diff, function(x) { abs( eval( parse( text = x ) ) ) })
+    
+    
+    if (NROW(vr_violations) > 0) {
+      
+      d$datim$vr_rules_check <- vr_violations  %>%
+        dplyr::select(name, ou_name, mech_code, formula, diff,abs_diff) %>%
+        dplyr::mutate(name = gsub(pattern = " DSD,", "", name)) %>% 
+        dplyr::rename("Validation rule" = name,
+                      "PSNU" = ou_name,
+                      "Mechanism" = mech_code,
+                      "Formula" = formula,
+                      "Diff (%)" = diff,
+                      "Diff (Absolute)" = abs_diff)
+      
+      flog.info(
+        paste0(
+          NROW(vr_violations),
+          " validation rule issues found in ",
+          d$info$datapack_name,
+          " DataPack."
+        ),
+        name = "datapack"
+      )
+    } else {
+      d$datim$vr_rules_check <- NULL
+      flog.info(
+        paste0(
+          "No validation rule issues found in ",
+          d$info$datapack_name,
+          " DataPack."
+        ),
+        name = "datapack"
+      )
+      return(d)
+    }
   }
   
   d
