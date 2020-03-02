@@ -75,6 +75,9 @@ shinyServer(function(input, output, session) {
         )
       )
     } else {
+      
+      wiki_url <- a("Datapack Wiki", href="https://github.com/pepfar-datim/Data-Pack-Feedback/wiki")
+      
       fluidPage(
         tags$head(tags$style(".shiny-notification {
                              position: fixed;
@@ -93,6 +96,7 @@ shinyServer(function(input, output, session) {
                 ".xlsx"
               )
             ),
+            tagList( wiki_url ),
             tags$hr(),
             actionButton("validate","Validate"),
             actionButton("reset_input", "Reset inputs"),
