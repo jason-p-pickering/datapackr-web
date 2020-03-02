@@ -13,8 +13,10 @@ require(DT)
 require(config)
 require(purrr)
 require(praise)
+require(scales)
 
 source("./utils.R")
+source("./visuals.R")
 
 shinyServer(function(input, output, session) {
   
@@ -90,6 +92,7 @@ shinyServer(function(input, output, session) {
           sidebarPanel(
             shinyjs::useShinyjs(),
             id = "side-panel",
+            tagList( wiki_url ),
             fileInput(
               "file1",
               "Choose DataPack (Must be XLSX!):",
@@ -98,7 +101,6 @@ shinyServer(function(input, output, session) {
                 ".xlsx"
               )
             ),
-            tagList( wiki_url ),
             tags$hr(),
             actionButton("validate","Validate"),
             actionButton("reset_input", "Reset inputs"),
@@ -120,7 +122,9 @@ shinyServer(function(input, output, session) {
             tabPanel("Indicator summary", dataTableOutput("indicator_summary")),
             tabPanel("Validation rules", dataTableOutput("vr_rules")),
             tabPanel("HTS Summary Chart", plotOutput("modality_summary")),
-            tabPanel("HTS Summary Table",dataTableOutput("modality_table"))
+            tabPanel("HTS Summary Table",dataTableOutput("modality_table")),
+            tabPanel("HTS Recency"),plotOutput("hts_recency_chart"),
+            tabPanel("Epi Cascade Pyramid",plotOutput("epi_cascade"))
             
           ))
         ))
@@ -234,7 +238,30 @@ shinyServer(function(input, output, session) {
   }
   
   validation_results <- reactive({ validate() })
+ 
+  output$hts_recency_chart<-renderPlot({ 
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      subnatPyramidsChart(vr)
+      
+    } else {
+      NULL
+    }
+  },height = 400,width = 600)
   
+  
+  output$hts_recency_chart<-renderPlot({ 
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      recencyComparisonChart(vr)
+      
+    } else {
+      NULL
+    }
+  },height = 400,width = 600)
+   
   output$modality_summary <- renderPlot({ 
     
     vr<-validation_results()

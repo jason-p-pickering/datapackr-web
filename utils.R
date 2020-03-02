@@ -203,38 +203,7 @@ modalitySummaryTable<-function(df){
   
 }
 
-modalitySummaryChart <- function(df) {
-  
-  df %>% 
-    dplyr::filter(!is.na(hts_modality)) %>%
-    dplyr::filter(resultstatus_specific != "Known at Entry Positive") %>% 
-    dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
-    dplyr::summarise(value = sum(target_value)) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
-    dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>%
-    ggplot(aes(
-      y = value,
-      x = reorder(hts_modality, value, sum),
-      fill = resultstatus_inclusive
-    )) +
-    geom_col() +
-    scale_y_continuous(labels = scales::comma) +
-    coord_flip() +
-    scale_fill_manual(values = c(	"#948d79", "#548dc0", "#59BFB3")) +
-    labs(y = "", x = "",
-         title = "COP20/FY21 Testing Targets",
-         subtitle = "modalities ordered by total tests") +
-    theme(legend.position = "bottom",
-          legend.title = element_blank(),
-          text = element_text(color = "#595959", size = 14),
-          plot.title = element_text(face = "bold"),
-          axis.ticks = element_blank(),
-          panel.background = element_blank(),
-          panel.grid.major.x = element_line(color = "#595959"),
-          panel.grid.minor.y = element_blank())
-  
-}
+
 
 getCountryNameFromUID<-function(uid) {
   
