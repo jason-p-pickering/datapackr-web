@@ -184,7 +184,7 @@ shinyServer(function(input, output, session) {
         
         flog.info(paste0("Initiating validation of ",d$info$datapack_name, " DataPack."), name="datapack")
         
-        if ( d$info$has_psnuxim ) {
+        if ( d$info$has_psnuxim  ) {
           flog.info("Datapack with PSNUxIM tab found.")
           
           incProgress(0.1, detail = ("Checking validation rules"))
@@ -210,10 +210,15 @@ shinyServer(function(input, output, session) {
           shinyjs::enable("send_paw")
           shinyjs::show("downloadValidationResults")
           shinyjs::enable("downloadValidationResults")
-          if (!d$info$has_psnuxim | d$info$missing_psnuxim_combos ) {
+          if (d$info$missing_psnuxim_combos ) {
             shinyjs::show("downloadDataPack")
             shinyjs::enable("downloadDataPack")
           }
+        } else {
+          #This should occur when there is no PSNUxIM tab and they want
+          #to generate one. 
+          shinyjs::show("downloadDataPack")
+          shinyjs::enable("downloadDataPack")
         }
       }
     })
