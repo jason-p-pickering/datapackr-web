@@ -165,8 +165,8 @@ recencyComparison <- function(d) {
       )
     )) %>%
     dplyr::rename(technical_area = indicator) %>%
-    tidyr::pivot_wider(names_from = technical_area, values_from = value) %>%
-    tidyr::drop_na()
+    tidyr::pivot_wider(names_from = technical_area, values_from = value,
+                       values_fill = list(value = 0)) 
   
   if (NROW(df) == 0) {
     return(NULL)
