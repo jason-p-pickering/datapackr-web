@@ -38,10 +38,11 @@ shinyServer(function(input, output, session) {
     shinyjs::reset("side-panel")
     shinyjs::enable("file1")
     shinyjs::disable("validate")
-    shinyjs::hide("downloadFlatPack")
-    shinyjs::hide("download_messages")
-    shinyjs::hide("send_paw")
-    shinyjs::hide("downloadValidationResults")
+    shinyjs::disable("downloadFlatPack")
+    shinyjs::disable("downloadDataPack")
+    shinyjs::disable("download_messages")
+    shinyjs::disable("send_paw")
+    shinyjs::disable("downloadValidationResults")
     ready$ok<-FALSE
   })
   
@@ -150,14 +151,11 @@ shinyServer(function(input, output, session) {
   
   validate<-function() {
     
-    shinyjs::hide("downloadFlatPack")
-    shinyjs::hide("downloadDataPack")
-    shinyjs::hide("download_messages")
-    shinyjs::hide("send_paw")
-    shinyjs::hide("vr_rules")
-    shinyjs::hide("modality_summary")
-    shinyjs::hide("modality_table")
-    shinyjs::hide("downloadValidationResults")
+    shinyjs::disable("downloadFlatPack")
+    shinyjs::disable("downloadDataPack")
+    shinyjs::disable("download_messages")
+    shinyjs::disable("send_paw")
+    shinyjs::disable("downloadValidationResults")
     
     
     if (!ready$ok) {
@@ -211,23 +209,16 @@ shinyServer(function(input, output, session) {
           Sys.sleep(1)
           d<-prepareFlatMERExport(d)
           
-          shinyjs::show("downloadFlatPack")
-          shinyjs::show("download_messages")
-          shinyjs::show("vr_rules")
-          shinyjs::show("modality_summary")
-          shinyjs::show("modality_table")
-          shinyjs::show("send_paw")
+          shinyjs::enable("downloadFlatPack")
+          shinyjs::enable("download_messages")
           shinyjs::enable("send_paw")
-          shinyjs::show("downloadValidationResults")
           shinyjs::enable("downloadValidationResults")
-          if (d$info$missing_psnuxim_combos ) {
-            shinyjs::show("downloadDataPack")
+          if ( d$info$missing_psnuxim_combos ) {
             shinyjs::enable("downloadDataPack")
           }
         } else {
           #This should occur when there is no PSNUxIM tab and they want
           #to generate one. 
-          shinyjs::show("downloadDataPack")
           shinyjs::enable("downloadDataPack")
         }
       }
