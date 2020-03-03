@@ -166,9 +166,12 @@ recencyComparison <- function(d) {
     )) %>%
     dplyr::rename(technical_area = indicator) %>%
     tidyr::pivot_wider(names_from = technical_area, values_from = value,
-                       values_fill = list(value = 0)) 
+                       values_fill = list(value = 0))
   
-  if (NROW(df) == 0) {
+  can_proceed <- NROW(df) > 0 & 
+    dplyr::setequal(names(df),c("hts_recency_compare","HTS_TST","HTS_RECENT"))
+  
+  if ( can_proceed ) {
     return(NULL)
   } else  {
     df %>%
