@@ -33,88 +33,157 @@ modalitySummaryChart <- function(df) {
   
 }
 
-
-recencyComparisonChart <- function(d) {
+recencyComparison <- function(d) {
+  hts_mechs <-
+    structure(
+      .Data = list(
+        indicator_code = c(
+          "HTS_INDEX_COM.N.Age_Sex_Result.T.NewPos",
+          "HTS_INDEX_COM.N.Age_Sex_Result.T.NewNeg",
+          "HTS_INDEX_FAC.N.Age_Sex_Result.T.NewPos",
+          "HTS_INDEX_FAC.N.Age_Sex_Result.T.NewNeg",
+          "HTS_TST_Inpat.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_Inpat.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_Pediatric.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_Pediatric.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_Malnutrition.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_Malnutrition.N.Age_Sex_Result.T.Negative",
+          "TB_STAT.N.Age_Sex_KnownNewPosNeg.T.NewPos",
+          "TB_STAT.N.Age_Sex_KnownNewPosNeg.T.NewNeg",
+          "PMTCT_STAT.N.Age_Sex_KnownNewResult.T.NewPos",
+          "PMTCT_STAT.N.Age_Sex_KnownNewResult.T.NewNeg",
+          "HTS_TST_PMTCTPostANC1.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_PMTCTPostANC1.N.Age_Sex_Result.T.Negative",
+          "VMMC_CIRC.N.Age_Sex_HIVStatus.T.Positive",
+          "VMMC_CIRC.N.Age_Sex_HIVStatus.T.Negative",
+          "HTS_TST_STIClinic.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_STIClinic.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_EmergencyWard.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_EmergencyWard.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_OtherPITC.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_OtherPITC.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_VCT.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_VCT.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_MobileMod.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_MobileMod.N.Age_Sex_Result.T.Negative",
+          "HTS_TST_OtherMod.N.Age_Sex_Result.T.Positive",
+          "HTS_TST_OtherMod.N.Age_Sex_Result.T.Negative",
+          "HTS_RECENT_IndexMod.N.Age_Sex_Result.T",
+          "HTS_RECENT_Index.N.Age_Sex_Result.T",
+          "HTS_RECENT_Inpat.N.Age_Sex_Result.T",
+          "HTS_RECENT_TB.N.Age_Sex_Result.T",
+          "HTS_RECENT_PMTCT.N.Age_Sex_Result.T",
+          "HTS_RECENT_PMTCTPostANC1.N.Age_Sex_Result.T",
+          "HTS_RECENT_VMMC.N.Age_Sex_Result.T",
+          "HTS_RECENT_STIClinic.N.Age_Sex_Result.T",
+          "HTS_RECENT_Emergency.N.Age_Sex_Result.T",
+          "HTS_RECENT_OtherPITC.N.Age_Sex_Result.T",
+          "HTS_RECENT_VCT.N.Age_Sex_Result.T",
+          "HTS_RECENT_MobileMod.N.Age_Sex_Result.T",
+          "HTS_RECENT_OtherMod.N.Age_Sex_Result.T"
+        ),
+        hts_recency_compare = c(
+          "Community - Index",
+          "Community - Index",
+          "Facility - Index",
+          "Facility - Index",
+          "Facility - Inpatient",
+          "Facility - Inpatient",
+          "Facility - Pediatric",
+          "Facility - Pediatric",
+          "Facility - Malnutrition",
+          "Facility - Malnutrition",
+          "Facility - TB Clinic",
+          "Facility - TB Clinic",
+          "Facility - PMTCT ANC1 Only",
+          "Facility - PMTCT ANC1 Only",
+          "Facility - PMTCT Post ANC1",
+          "Facility - PMTCT Post ANC1",
+          "Facility - VMMC",
+          "Facility - VMMC",
+          "Facility - STI Clinic",
+          "Facility - STI Clinic",
+          "Facility - Emergency Ward",
+          "Facility - Emergency Ward",
+          "Facility - Other PITC",
+          "Facility - Other PITC",
+          "Facility - VCT",
+          "Facility - VCT",
+          "Community - Mobile",
+          "Community - Mobile",
+          "Community - Other Services",
+          "Community - Other Services",
+          "Community - Index",
+          "Facility - Index",
+          "Facility - Inpatient",
+          "Facility - TB Clinic",
+          "Facility - PMTCT ANC1 Only",
+          "Facility - PMTCT Post ANC1",
+          "Facility - VMMC",
+          "Facility - STI Clinic",
+          "Facility - Emergency Ward",
+          "Facility - Other PITC",
+          "Facility - VCT",
+          "Community - Mobile",
+          "Community - Other Services"
+        )
+      ),
+      names = c("indicator_code", "hts_recency_compare"),
+      row.names = c(NA, 43L),
+      class = "data.frame"
+    )
   
-  hts_mechs <- structure(.Data=list(indicator_code = c("HTS_INDEX_COM.N.Age_Sex_Result.T.NewPos","HTS_INDEX_COM.N.Age_Sex_Result.T.NewNeg",
-                                             "HTS_INDEX_FAC.N.Age_Sex_Result.T.NewPos","HTS_INDEX_FAC.N.Age_Sex_Result.T.NewNeg",
-                                             "HTS_TST_Inpat.N.Age_Sex_Result.T.Positive","HTS_TST_Inpat.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_Pediatric.N.Age_Sex_Result.T.Positive","HTS_TST_Pediatric.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_Malnutrition.N.Age_Sex_Result.T.Positive","HTS_TST_Malnutrition.N.Age_Sex_Result.T.Negative",
-                                             "TB_STAT.N.Age_Sex_KnownNewPosNeg.T.NewPos","TB_STAT.N.Age_Sex_KnownNewPosNeg.T.NewNeg",
-                                             "PMTCT_STAT.N.Age_Sex_KnownNewResult.T.NewPos","PMTCT_STAT.N.Age_Sex_KnownNewResult.T.NewNeg",
-                                             "HTS_TST_PMTCTPostANC1.N.Age_Sex_Result.T.Positive","HTS_TST_PMTCTPostANC1.N.Age_Sex_Result.T.Negative",
-                                             "VMMC_CIRC.N.Age_Sex_HIVStatus.T.Positive","VMMC_CIRC.N.Age_Sex_HIVStatus.T.Negative",
-                                             "HTS_TST_STIClinic.N.Age_Sex_Result.T.Positive","HTS_TST_STIClinic.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_EmergencyWard.N.Age_Sex_Result.T.Positive","HTS_TST_EmergencyWard.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_OtherPITC.N.Age_Sex_Result.T.Positive","HTS_TST_OtherPITC.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_VCT.N.Age_Sex_Result.T.Positive","HTS_TST_VCT.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_MobileMod.N.Age_Sex_Result.T.Positive","HTS_TST_MobileMod.N.Age_Sex_Result.T.Negative",
-                                             "HTS_TST_OtherMod.N.Age_Sex_Result.T.Positive","HTS_TST_OtherMod.N.Age_Sex_Result.T.Negative",
-                                             "HTS_RECENT_IndexMod.N.Age_Sex_Result.T","HTS_RECENT_Index.N.Age_Sex_Result.T",
-                                             "HTS_RECENT_Inpat.N.Age_Sex_Result.T","HTS_RECENT_TB.N.Age_Sex_Result.T",
-                                             "HTS_RECENT_PMTCT.N.Age_Sex_Result.T","HTS_RECENT_PMTCTPostANC1.N.Age_Sex_Result.T",
-                                             "HTS_RECENT_VMMC.N.Age_Sex_Result.T","HTS_RECENT_STIClinic.N.Age_Sex_Result.T",
-                                             "HTS_RECENT_Emergency.N.Age_Sex_Result.T","HTS_RECENT_OtherPITC.N.Age_Sex_Result.T",
-                                             "HTS_RECENT_VCT.N.Age_Sex_Result.T","HTS_RECENT_MobileMod.N.Age_Sex_Result.T",
-                                             "HTS_RECENT_OtherMod.N.Age_Sex_Result.T"),
-                                    hts_recency_compare = c("Community - Index","Community - Index","Facility - Index","Facility - Index",
-                                           "Facility - Inpatient","Facility - Inpatient","Facility - Pediatric",
-                                           "Facility - Pediatric","Facility - Malnutrition","Facility - Malnutrition","Facility - TB Clinic",
-                                           "Facility - TB Clinic","Facility - PMTCT ANC1 Only","Facility - PMTCT ANC1 Only","Facility - PMTCT Post ANC1",
-                                           "Facility - PMTCT Post ANC1","Facility - VMMC","Facility - VMMC","Facility - STI Clinic",
-                                           "Facility - STI Clinic","Facility - Emergency Ward","Facility - Emergency Ward","Facility - Other PITC",
-                                           "Facility - Other PITC","Facility - VCT","Facility - VCT","Community - Mobile",
-                                           "Community - Mobile","Community - Other Services","Community - Other Services","Community - Index",
-                                           "Facility - Index","Facility - Inpatient","Facility - TB Clinic","Facility - PMTCT ANC1 Only",
-                                           "Facility - PMTCT Post ANC1","Facility - VMMC","Facility - STI Clinic","Facility - Emergency Ward",
-                                           "Facility - Other PITC","Facility - VCT","Community - Mobile","Community - Other Services")),
-                         names=c("indicator_code","hts_recency_compare"),row.names=c(NA,43L),class="data.frame")
-  
-  indicator_map<- datapackr::map_DataPack_DATIM_DEs_COCs[,c("dataelement","indicator_code")] %>% 
-    dplyr::distinct() %>% 
+  indicator_map <-
+    datapackr::map_DataPack_DATIM_DEs_COCs[, c("dataelement", "indicator_code")] %>%
+    dplyr::distinct() %>%
     dplyr::rename(dataelement_id = dataelement)
   
+  hts_recency_map <- dplyr::inner_join(indicator_map, hts_mechs) %>%
+    dplyr::select(dataelement_id, hts_recency_compare)
+  
   df <- d %>%
-    purrr::pluck(.,"data") %>%
-    purrr::pluck(.,"analytics") %>%
-    dplyr::inner_join( indicator_map , by = "dataelement_id") %>% 
-    dplyr::full_join(hts_mechs,by="indicator_code") %>%
-    dplyr::filter(!is.na(hts_recency_compare)) %>%
-    dplyr::filter(resultstatus_specific == "Positive") %>% 
-    dplyr::group_by(hts_recency_compare,indicator) %>%
+    purrr::pluck(., "data") %>%
+    purrr::pluck(., "analytics") %>%
+    dplyr::inner_join(hts_recency_map , by = "dataelement_id") %>%
+    dplyr::filter(resultstatus_inclusive == "Positive") %>%
+    dplyr::filter(!(
+      resultstatus_specific %in% c("Known at Entry Positive", "Status Unknown")
+    )) %>%
+    dplyr::group_by(hts_recency_compare, indicator) %>%
     dplyr::summarise(value = sum(target_value)) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(indicator, desc(indicator)) %>% 
-    dplyr::mutate(indicator = ifelse(indicator == "HTS_RECENT","HTS_RECENT","HTS_TST")) %>%
-    dplyr::mutate(indicator = factor(indicator, c("HTS_TST", "HTS_INDEX", "HTS_RECENT", "PMTCT_STAT", "TB_STAT"))) %>% 
-    dplyr::rename(technical_area = indicator)
-    
-  df %>% 
-    ggplot(aes(
-      y = value,
-      x = reorder(hts_recency_compare, value, sum),
-      fill = technical_area
-    )) +
-    geom_col(position=position_dodge2(preserve="single")) +
-    scale_y_continuous(labels = scales::comma) +
-    coord_flip() +
-    scale_fill_manual(values = c(	"#948d79", "#548dc0")) +
-    labs(y = "", x = "",
-         title = "COP20/FY21 Recency Testing Targets",
-         subtitle = "Comparison of HTS_TST and HTS_RECENT targets by modality") +
-    theme(legend.position = "bottom",
-          legend.title = element_blank(),
-          text = element_text(color = "#595959", size = 14),
-          plot.title = element_text(face = "bold"),
-          axis.ticks = element_blank(),
-          panel.background = element_blank(),
-          panel.grid.major.x = element_line(color = "#595959"),
-          panel.grid.minor.y = element_blank())
+    dplyr::arrange(indicator, desc(indicator)) %>%
+    dplyr::mutate(indicator = ifelse(indicator == "HTS_RECENT", "HTS_RECENT", "HTS_TST")) %>%
+    dplyr::mutate(indicator = factor(
+      indicator,
+      c(
+        "HTS_TST",
+        "HTS_INDEX",
+        "HTS_RECENT",
+        "PMTCT_STAT",
+        "TB_STAT"
+      )
+    )) %>%
+    dplyr::rename(technical_area = indicator) %>%
+    tidyr::pivot_wider(names_from = technical_area, values_from = value) %>%
+    tidyr::drop_na()
   
+  if (NROW(df) == 0) {
+    return(NULL)
+  } else  {
+    df %>%
+      dplyr::select("Modality" = hts_recency_compare,
+                    HTS_RECENT,
+                    "HTS_TST_POS" = HTS_TST) %>%
+      dplyr::arrange(Modality) %>%
+      dplyr::mutate("HTS_RECENT (%)" = HTS_RECENT / HTS_TST_POS * 100) %>%
+      dplyr::mutate(
+        HTS_RECENT = format(HTS_RECENT , big.mark = ',', scientific = FALSE),
+        HTS_TST_POS = format(HTS_TST_POS , big.mark = ',', scientific = FALSE),
+        `HTS_RECENT (%)` = format(round(`HTS_RECENT (%)`, 2), nsmall = 2)
+      )
+  } 
 }
-
-#recencyComparisonChart(d)
 
 subnatPyramidsChart <- function(d){
   
@@ -146,13 +215,15 @@ subnatPyramidsChart <- function(d){
     dplyr::bind_rows(df_subnat,.) %>%
     dplyr::mutate(indicator_code = ifelse(
       indicator_code == "PLHIV.NA.Age/Sex/HIVStatus.T","PLHIV",ifelse(
-          indicator_code == "TX_CURR.N.Age_Sex_HIVStatus.T","TX_CURR",ifelse(
-            indicator_code == "TX_PVLS.N.Age_Sex_Indication_HIVStatus.T.Routine","TX_PVLS",NA
-          )
-        ) 
-      )
+        indicator_code == "TX_CURR.N.Age_Sex_HIVStatus.T","TX_CURR",ifelse(
+          indicator_code == "TX_PVLS.N.Age_Sex_Indication_HIVStatus.T.Routine","TX_PVLS",NA
+        )
+      ) 
+    )
     ) 
-
+  
+  
+  y_lim<-max(df$value)
   
   df %>%
     ggplot(aes(x = Age, y = value, fill = indicator_code)) +
@@ -164,12 +235,12 @@ subnatPyramidsChart <- function(d){
              position = "identity",
              mapping = aes(y = -value)) +
     coord_flip() +
-    labs(y = "Males to Left of Axis and Females to Right of Axis", x = "",
-         title = "COP20/FY21 Epidemic Cascade Age & Sex Pyramid",
-         subtitle = "Comparison of Population with HIV, on Treatment, and Virally Suppressed") +
+    labs( x = "", y = "<- Males | Females ->",
+          title = "COP20/FY21 Epidemic Cascade Age & Sex Pyramid",
+          subtitle = "Comparison of Population with HIV, on Treatment, and Virally Suppressed") +
     geom_hline(yintercept = 0, size=1) +
     scale_fill_manual(values = c(	"#B2182B", "#EF8A62","#67A9CF")) +
-    scale_y_continuous(labels = function(x){scales::comma(abs(x))}) +
+    scale_y_continuous(limits = c(-y_lim,y_lim), labels = function(x){scales::comma(abs(x))}) +
     theme(legend.position = "bottom",
           legend.title = element_blank(),
           text = element_text(color = "#595959", size =14),
@@ -178,7 +249,5 @@ subnatPyramidsChart <- function(d){
           panel.background = element_blank(),
           panel.grid.major.x = element_line(color = "#595959"),
           panel.grid.minor.y = element_blank())
-
+  
 }
-
-#subnatPyramidsChart(d)

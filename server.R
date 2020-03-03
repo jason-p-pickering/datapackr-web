@@ -123,7 +123,7 @@ shinyServer(function(input, output, session) {
             tabPanel("Validation rules", dataTableOutput("vr_rules")),
             tabPanel("HTS Summary Chart", plotOutput("modality_summary")),
             tabPanel("HTS Summary Table",dataTableOutput("modality_table")),
-            tabPanel("HTS Recency"),plotOutput("hts_recency_chart"),
+            tabPanel("HTS Recency",dataTableOutput("hts_recency")),
             tabPanel("Epi Cascade Pyramid",plotOutput("epi_cascade"))
             
           ))
@@ -238,11 +238,12 @@ shinyServer(function(input, output, session) {
   }
   
   validation_results <- reactive({ validate() })
- 
-  output$hts_recency_chart<-renderPlot({ 
+  
+  output$epi_cascade<-renderPlot({ 
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
+      
       subnatPyramidsChart(vr)
       
     } else {
@@ -251,17 +252,27 @@ shinyServer(function(input, output, session) {
   },height = 400,width = 600)
   
   
-  output$hts_recency_chart<-renderPlot({ 
+  output$hts_recency<-DT::renderDataTable({ 
+    
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
-      recencyComparisonChart(vr)
+      
+      r<-recencyComparison(vr)
+      DT::datatable(r,
+                    options = list(pageLength = 25,columnDefs = list(list(
+                      className = 'dt-right', targets = 2),
+                      list(
+                        className = 'dt-right', targets = 3),
+                      list(
+                        className = 'dt-right', targets = 4)
+                    )))
       
     } else {
       NULL
     }
-  },height = 400,width = 600)
-   
+  })
+  
   output$modality_summary <- renderPlot({ 
     
     vr<-validation_results()
