@@ -210,7 +210,6 @@ subnatPyramidsChart <- function(d){
     dplyr::rename(Age = age,
                   Sex = sex) %>% 
     dplyr::arrange(indicator_code, desc(indicator_code)) %>%
-    dplyr::bind_rows(df_subnat,.) %>%
     dplyr::mutate(indicator_code = ifelse(
       indicator_code == "PLHIV.NA.Age/Sex/HIVStatus.T","PLHIV",ifelse(
         indicator_code == "TX_CURR.N.Age_Sex_HIVStatus.T","TX_CURR",ifelse(
