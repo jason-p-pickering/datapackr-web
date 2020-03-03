@@ -171,7 +171,7 @@ recencyComparison <- function(d) {
   can_proceed <- NROW(df) > 0 & 
     dplyr::setequal(names(df),c("hts_recency_compare","HTS_TST","HTS_RECENT"))
   
-  if ( can_proceed ) {
+  if ( !can_proceed ) {
     return(NULL)
   } else  {
     df %>%
