@@ -1,5 +1,3 @@
-
-
 modalitySummaryChart <- function(df) {
   
   df %>% 
@@ -190,25 +188,22 @@ recencyComparison <- function(d) {
 
 subnatPyramidsChart <- function(d){
   
-  df_subnat <- d %>%
-    purrr::pluck(.,"data") %>%
-    purrr::pluck(.,"SUBNAT_IMPATT") %>%
-    dplyr::filter(indicator_code == "PLHIV.NA.Age/Sex/HIVStatus.T") %>%
-    dplyr::group_by(Age,Sex,indicator_code) %>%
-    dplyr::summarise(value = sum(value)) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(indicator_code, desc(indicator_code)) 
-  
   indicator_map<- datapackr::map_DataPack_DATIM_DEs_COCs[,c("dataelement","indicator_code")] %>% 
     dplyr::distinct() %>% 
     dplyr::rename(dataelement_id = dataelement)
   
   df <- d %>%
     purrr::pluck(.,"data") %>%
-    purrr::pluck(.,"analytics") %>%
+    purrr::pluck(.,"analytics") 
+  
+  if (is.null(df)) {return(NULL)}
+  
+   df %<>%
     dplyr::inner_join( indicator_map , by = "dataelement_id") %>% 
     dplyr::filter(indicator_code == "TX_CURR.N.Age_Sex_HIVStatus.T" | 
-                    indicator_code == "TX_PVLS.N.Age_Sex_Indication_HIVStatus.T.Routine") %>%
+                    indicator_code == "TX_PVLS.N.Age_Sex_Indication_HIVStatus.T.Routine"  | 
+                    indicator_code == "PLHIV.NA.Age/Sex/HIVStatus.T") %>%
+    dplyr::select(age,sex,indicator_code,target_value) %>% 
     dplyr::group_by(age,sex,indicator_code) %>%
     dplyr::summarise(value = sum(target_value)) %>%
     dplyr::ungroup() %>%
@@ -225,6 +220,7 @@ subnatPyramidsChart <- function(d){
     )
     ) 
   
+   if ( NROW(df) == 0 ) {return(NULL)}
   
   y_lim<-max(df$value)
   
@@ -238,7 +234,7 @@ subnatPyramidsChart <- function(d){
              position = "identity",
              mapping = aes(y = -value)) +
     coord_flip() +
-    labs( x = "", y = "<- Males | Females ->",
+    labs( x = "", y = "\u2190 Males | Females \u2192",
           title = "COP20/FY21 Epidemic Cascade Age & Sex Pyramid",
           subtitle = "Comparison of Population with HIV, on Treatment, and Virally Suppressed") +
     geom_hline(yintercept = 0, size=1) +
