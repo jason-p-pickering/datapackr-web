@@ -445,7 +445,7 @@ shinyServer(function(input, output, session) {
       
       openxlsx::addWorksheet(wb,"PSNUxIM without dedupe")
       openxlsx::writeDataTable(wb = wb,
-                               sheet = "PSNU without dedupe",x = d_compare$psnu_x_im_wo_dedup)
+                               sheet = "PSNUxIM without dedupe",x = d_compare$psnu_x_im_wo_dedup)
       
       
       openxlsx::addWorksheet(wb,"PSNU with dedupe")
