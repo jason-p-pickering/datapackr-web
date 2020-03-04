@@ -31,6 +31,43 @@ modalitySummaryChart <- function(df) {
   
 }
 
+modalityYieldChart <- function(df) {
+  
+  df %<>% 
+    dplyr::filter(!is.na(hts_modality)) %>%
+    dplyr::filter(resultstatus_specific != "Known at Entry Positive") %>% 
+    dplyr::group_by(hts_modality, resultstatus_inclusive) %>%
+    dplyr::summarise(target_value = sum(target_value)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(freq = target_value/sum(target_value)) %>%
+    dplyr::filter(resultstatus_inclusive == "Positive") 
+  
+  x_lim <- max(df$freq)
+  
+  df %>%
+    ggplot(aes(
+      y = freq,
+      x = reorder(hts_modality, freq)
+    )) +
+    geom_col(fill="#67A9CF") +
+    geom_text(aes(label = scales::percent(freq,accuracy=0.01),hjust=-0.25)) +
+    scale_y_continuous(labels = scales::percent,limits = c(0,x_lim*1.1)) +
+    coord_flip() +
+    scale_fill_manual(values = c("#2166AC")) +
+    labs(y = "", x = "",
+         title = "COP20/FY21 Testing Yields",
+         subtitle = "modalities ordered by yield rates") +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          text = element_text(color = "#595959", size = 14),
+          plot.title = element_text(face = "bold"),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          panel.grid.major.x = element_line(color = "#595959"),
+          panel.grid.minor.y = element_blank())
+  
+}
+
 recencyComparison <- function(d) {
   hts_mechs <-
     structure(

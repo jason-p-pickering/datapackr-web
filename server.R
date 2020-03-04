@@ -124,6 +124,7 @@ shinyServer(function(input, output, session) {
             tabPanel("Validation rules", dataTableOutput("vr_rules")),
             tabPanel("HTS Summary Chart", plotOutput("modality_summary")),
             tabPanel("HTS Summary Table",dataTableOutput("modality_table")),
+            tabPanel("HTS Yield",plotOutput("modality_yield")),
             tabPanel("HTS Recency",dataTableOutput("hts_recency")),
             tabPanel("Epi Cascade Pyramid",plotOutput("epi_cascade"))
             
@@ -279,6 +280,22 @@ shinyServer(function(input, output, session) {
     }
     
   },height = 400,width = 600)
+  
+  output$modality_yield <- renderPlot({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      vr  %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"analytics") %>%
+        modalityYieldChart()
+      
+    } else {
+      NULL
+    }
+    
+  },height = 400,width = 600)  
   
   output$modality_table<-DT::renderDataTable({
     
