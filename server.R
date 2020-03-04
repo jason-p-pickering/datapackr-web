@@ -14,6 +14,7 @@ require(config)
 require(purrr)
 require(praise)
 require(scales)
+require(rpivotTable)
 
 source("./utils.R")
 source("./visuals.R")
@@ -130,7 +131,8 @@ shinyServer(function(input, output, session) {
             tabPanel("HTS Summary Chart", plotOutput("modality_summary")),
             tabPanel("HTS Summary Table",dataTableOutput("modality_table")),
             tabPanel("HTS Recency",dataTableOutput("hts_recency")),
-            tabPanel("Epi Cascade Pyramid",plotOutput("epi_cascade"))
+            tabPanel("Epi Cascade Pyramid",plotOutput("epi_cascade")),
+            tabPanel("PSNUxIM Pivot",rpivotTableOutput({"pivot"}))
             
           ))
         ))
@@ -248,6 +250,18 @@ shinyServer(function(input, output, session) {
     }
   },height = 600,width = 800)
   
+  
+  output$pivot <- renderRpivotTable({
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      
+      PSNUxIM_pivot(vr)
+      
+    } else {
+      NULL
+    }
+  })
   
   output$hts_recency<-DT::renderDataTable({ 
     
@@ -577,4 +591,3 @@ shinyServer(function(input, output, session) {
     }
   )
 })
-  
