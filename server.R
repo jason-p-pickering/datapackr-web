@@ -43,6 +43,7 @@ shinyServer(function(input, output, session) {
     shinyjs::disable("download_messages")
     shinyjs::disable("send_paw")
     shinyjs::disable("downloadValidationResults")
+    shinyjs::disable("compare")
     ready$ok<-FALSE
   })
   
@@ -114,7 +115,9 @@ shinyServer(function(input, output, session) {
             tags$hr(),
             actionButton("send_paw", "Send to PAW"),
             tags$hr(),
-            downloadButton("downloadDataPack","Regenerate PSNUxIM")
+            downloadButton("downloadDataPack","Regenerate PSNUxIM"),
+            tags$hr(),
+            downloadButton("compare","Compare with DATIM")
           ),
           mainPanel(tabsetPanel(
             id = "main-panel",
@@ -156,7 +159,7 @@ shinyServer(function(input, output, session) {
     shinyjs::disable("download_messages")
     shinyjs::disable("send_paw")
     shinyjs::disable("downloadValidationResults")
-    
+    shinyjs::disable("compare")
     
     if (!ready$ok) {
       shinyjs::disable("validate")
@@ -213,6 +216,7 @@ shinyServer(function(input, output, session) {
           shinyjs::enable("download_messages")
           shinyjs::enable("send_paw")
           shinyjs::enable("downloadValidationResults")
+          shinyjs::enable("compare")
           if ( d$info$missing_psnuxim_combos ) {
             shinyjs::enable("downloadDataPack")
           }
@@ -421,6 +425,45 @@ shinyServer(function(input, output, session) {
     }
   )
   
+  
+  output$compare <- downloadHandler(
+    filename = function() {
+      
+      prefix <- "comparison"
+      
+      date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      
+      paste0(paste(prefix,date,sep="_"),".xlsx")
+    },
+    content = function(file) {
+      
+      #Create a new workbook
+      wb <- openxlsx::createWorkbook()
+      
+      d<-validation_results()
+      d_compare<-datapackr::compareData_DatapackVsDatim(d)
+      
+      openxlsx::addWorksheet(wb,"PSNUxIM without dedupe")
+      openxlsx::writeDataTable(wb = wb,
+                               sheet = "PSNU without dedupe",x = d_compare$psnu_x_im_wo_dedup)
+      
+      
+      openxlsx::addWorksheet(wb,"PSNU with dedupe")
+      openxlsx::writeDataTable(wb = wb,
+                               sheet = "PSNU with dedupe",x = d_compare$psnu_w_dedup)
+      
+      datapack_name <-d$info$datapack_name
+      
+      flog.info(
+        paste0("Comparison requested for ", datapack_name) 
+        ,
+        name = "datapack"
+      )
+      
+      openxlsx::saveWorkbook(wb,file=file,overwrite = TRUE)
+      
+    }
+  )
   
   output$downloadFlatPack <- downloadHandler(
     filename = function() {
