@@ -95,6 +95,7 @@ shinyServer(function(input, output, session) {
             shinyjs::useShinyjs(),
             id = "side-panel",
             tagList( wiki_url ),
+            tags$hr(),
             fileInput(
               "file1",
               "Choose DataPack (Must be XLSX!):",
@@ -105,7 +106,6 @@ shinyServer(function(input, output, session) {
             ),
             tags$hr(),
             actionButton("validate","Validate"),
-            actionButton("reset_input", "Reset inputs"),
             tags$hr(),
             downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
             tags$hr(),
@@ -117,7 +117,9 @@ shinyServer(function(input, output, session) {
             tags$hr(),
             downloadButton("downloadDataPack","Regenerate PSNUxIM"),
             tags$hr(),
-            downloadButton("compare","Compare with DATIM")
+            downloadButton("compare","Compare with DATIM"),
+            tags$hr(),
+            actionButton("reset_input", "Reset inputs")
           ),
           mainPanel(tabsetPanel(
             id = "main-panel",
@@ -244,7 +246,7 @@ shinyServer(function(input, output, session) {
     } else {
       NULL
     }
-  },height = 400,width = 600)
+  },height = 600,width = 800)
   
   
   output$hts_recency<-DT::renderDataTable({ 
@@ -282,7 +284,7 @@ shinyServer(function(input, output, session) {
       NULL
     }
     
-  },height = 400,width = 600)
+  },height = 600,width = 800)
   
   output$modality_table<-DT::renderDataTable({
     
@@ -575,3 +577,4 @@ shinyServer(function(input, output, session) {
     }
   )
 })
+  
