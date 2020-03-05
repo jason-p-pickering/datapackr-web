@@ -9,11 +9,12 @@ PSNUxIM_pivot<-function(d){
                   value = target_value) %>% 
     dplyr::group_by(dataelement_name,psnu,mechanism_code) %>% 
     dplyr::summarise(value = sum(value)) %>% 
-    dplyr::ungroup()
+    dplyr::ungroup() %>% 
+    dplyr::mutate(mechanism_code = ifelse(mechanism_code == "HllvX50cXC0","default",mechanism_code))
   
   rpivotTable(data =   pivot   ,  rows = c( "dataelement_name"),
-              vals = "value", aggregatorName = "Sum", rendererName = "Table"
-              , width="50%", height="550px")
+              vals = "value", aggregatorName = "Integer Sum", rendererName = "Table"
+              , width="56%", height="700px")
 }
 
 modalitySummaryChart <- function(df) {
@@ -267,3 +268,4 @@ subnatPyramidsChart <- function(d){
           panel.grid.minor.y = element_blank())
   
 }
+  
