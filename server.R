@@ -103,16 +103,17 @@ shinyServer(function(input, output, session) {
               accept = c(
                 "application/xlsx",
                 ".xlsx"
-              )
+              ),
+              width="240px"
             ),
             tags$hr(),
             actionButton("validate","Validate"),
             tags$hr(),
-            downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
+            downloadButton("downloadFlatPack", "Download FlatPack"),
             tags$hr(),
-            downloadButton("download_messages","Download validation messages"),
+            downloadButton("download_messages","Validation messages"),
             tags$hr(),
-            downloadButton("downloadValidationResults","Download validation report"),
+            downloadButton("downloadValidationResults","Validation report"),
             tags$hr(),
             actionButton("send_paw", "Send to PAW"),
             tags$hr(),
