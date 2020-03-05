@@ -6,15 +6,17 @@ PSNUxIM_pivot<-function(d){
     dplyr::select(dataelement_name,
                   psnu,
                   mechanism_code,
+                  partner= partner_desc,
+                  agency = funding_agency,
                   value = target_value) %>% 
-    dplyr::group_by(dataelement_name,psnu,mechanism_code) %>% 
+    dplyr::group_by(dataelement_name,psnu,mechanism_code,partner,agency) %>% 
     dplyr::summarise(value = sum(value)) %>% 
     dplyr::ungroup() %>% 
     dplyr::mutate(mechanism_code = ifelse(mechanism_code == "HllvX50cXC0","default",mechanism_code))
   
   rpivotTable(data =   pivot   ,  rows = c( "dataelement_name"),
               vals = "value", aggregatorName = "Integer Sum", rendererName = "Table"
-              , width="56%", height="700px")
+              , width="70%", height="700px")
 }
 
 modalitySummaryChart <- function(df) {
