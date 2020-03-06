@@ -270,6 +270,7 @@ shinyServer(function(input, output, session) {
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
+      if (  is.null(vr$data$analytics) ) { return(NULL) }
       r<-recencyComparison(vr)
       DT::datatable(r,
                     options = list(pageLength = 25,columnDefs = list(list(
