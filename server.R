@@ -312,7 +312,7 @@ shinyServer(function(input, output, session) {
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
-      if (is.null) {vr$data$analytics} return(NULL)
+      if ( is.null(vr$data$analytics) )  { return(NULL) }
       
       table_formatted<-modalitySummaryTable(vr$data$analytics) %>%
         dplyr::mutate(
