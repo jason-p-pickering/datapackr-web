@@ -257,6 +257,7 @@ shinyServer(function(input, output, session) {
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
+      if ( is.null(vr$data$analytics) ) {return(NULL)}
       PSNUxIM_pivot(vr)
       
     } else {
