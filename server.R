@@ -240,6 +240,7 @@ shinyServer(function(input, output, session) {
   validation_results <- reactive({ validate() })
   
   output$epi_cascade<-renderPlot({ 
+    
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
@@ -250,7 +251,6 @@ shinyServer(function(input, output, session) {
       NULL
     }
   },height = 600,width = 800)
-  
   
   output$pivot <- renderRpivotTable({
     vr<-validation_results()
@@ -290,11 +290,15 @@ shinyServer(function(input, output, session) {
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
-      vr  %>% 
+      analytics<-
+        vr %>% 
         purrr::pluck(.,"data") %>%
-        purrr::pluck(.,"analytics") %>%
-        modalitySummaryChart()
+        purrr::pluck(.,"analytics") 
       
+      if (is.null(analytics)) {return(NULL)} else {
+        modalitySummaryChart(analytics)
+      }
+        
     } else {
       NULL
     }
@@ -306,6 +310,8 @@ shinyServer(function(input, output, session) {
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
+      
+      if (is.null) {vr$data$analytics} return(NULL)
       
       table_formatted<-modalitySummaryTable(vr$data$analytics) %>%
         dplyr::mutate(
@@ -412,8 +418,7 @@ shinyServer(function(input, output, session) {
     }
   )
   
-  
-  
+
   output$downloadValidationResults <- downloadHandler(
     filename = function() {
       
