@@ -432,17 +432,13 @@ shinyServer(function(input, output, session) {
   
   output$vr_rules<-DT::renderDataTable({
     
-    vr<-validation_results()
-    
-    if ( is.null(vr)) {
-      return(NULL)
-    }
+    vr<-validation_results() %>%
+      purrr::pluck(.,"tests") %>%
+      purrr::pluck(.,"vr_rules_check")
     
     if (!inherits(vr,"error")  & !is.null(vr)){
       
-      vr_results <- vr %>%
-        purrr::pluck(.,"tests") %>%
-        purrr::pluck(.,"vr_rules_check")
+        vr
       
     }  else {
       return(NULL)
