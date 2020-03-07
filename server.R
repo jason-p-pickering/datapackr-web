@@ -436,20 +436,18 @@ shinyServer(function(input, output, session) {
       purrr::pluck(.,"tests") %>%
       purrr::pluck(.,"vr_rules_check")
     
-    if (!inherits(vr,"error")  & !is.null(vr)){
+    if ( inherits(vr,"error")  | is.null(vr) ){
       
-        vr
-      
-    }  else {
       return(NULL)
     }
     
     if (NROW(vr_results) == 0 ) {
-      return(data.frame(message="Congratulations! No validation rule issues found!"))
+      
+      data.frame(message="Congratulations! No validation rule issues found!")
+    
+      } else {
+      vr
     }
-    
-    vr_results
-    
   })
   
   output$downloadDataPack <- downloadHandler(
