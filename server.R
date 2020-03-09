@@ -15,6 +15,7 @@ require(config)
 require(purrr)
 require(praise)
 require(scales)
+require(rpivotTable)
 
 source("./utils.R")
 source("./visuals.R")
@@ -44,6 +45,7 @@ shinyServer(function(input, output, session) {
     shinyjs::disable("download_messages")
     shinyjs::disable("send_paw")
     shinyjs::disable("downloadValidationResults")
+    shinyjs::disable("compare")
     ready$ok<-FALSE
   })
   
@@ -97,27 +99,32 @@ shinyServer(function(input, output, session) {
             shinyjs::useShinyjs(),
             id = "side-panel",
             tagList( wiki_url ),
+            tags$hr(),
             fileInput(
               "file1",
               "Choose DataPack (Must be XLSX!):",
               accept = c(
                 "application/xlsx",
                 ".xlsx"
-              )
+              ),
+              width="240px"
             ),
             tags$hr(),
             actionButton("validate","Validate"),
-            actionButton("reset_input", "Reset inputs"),
             tags$hr(),
-            downloadButton("downloadFlatPack", "Download FlatPacked DataPack"),
+            downloadButton("downloadFlatPack", "Download FlatPack"),
             tags$hr(),
-            downloadButton("download_messages","Download validation messages"),
+            downloadButton("download_messages","Validation messages"),
             tags$hr(),
-            downloadButton("downloadValidationResults","Download validation report"),
+            downloadButton("downloadValidationResults","Validation report"),
             tags$hr(),
             actionButton("send_paw", "Send to PAW"),
             tags$hr(),
-            downloadButton("downloadDataPack","Regenerate PSNUxIM")
+            downloadButton("downloadDataPack","Regenerate PSNUxIM"),
+            tags$hr(),
+            downloadButton("compare","Compare with DATIM"),
+            tags$hr(),
+            actionButton("reset_input", "Reset inputs")
           ),
           mainPanel(tabsetPanel(
             id = "main-panel",
@@ -134,6 +141,7 @@ shinyServer(function(input, output, session) {
                      plotOutput("epi_cascade")),
             tabPanel("KP Cascade Pyramid",pickerInput("kpCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
                      plotOutput("kp_cascade"))
+            tabPanel("PSNUxIM Pivot",rpivotTableOutput({"pivot"}))
             
           ))
         ))
@@ -164,7 +172,7 @@ shinyServer(function(input, output, session) {
     shinyjs::disable("download_messages")
     shinyjs::disable("send_paw")
     shinyjs::disable("downloadValidationResults")
-    
+    shinyjs::disable("compare")
     
     if (!ready$ok) {
       shinyjs::disable("validate")
@@ -221,6 +229,7 @@ shinyServer(function(input, output, session) {
           shinyjs::enable("download_messages")
           shinyjs::enable("send_paw")
           shinyjs::enable("downloadValidationResults")
+          shinyjs::enable("compare")
           if ( d$info$missing_psnuxim_combos ) {
             shinyjs::enable("downloadDataPack")
           }
@@ -239,6 +248,7 @@ shinyServer(function(input, output, session) {
   validation_results <- reactive({ validate() })
   
   output$epi_cascade<-renderPlot({ 
+    
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
@@ -248,7 +258,7 @@ shinyServer(function(input, output, session) {
     } else {
       NULL
     }
-  },height = 400,width = 600)
+  },height = 600,width = 800)
 
   output$kp_cascade<-renderPlot({ 
     vr<-validation_results()
@@ -262,6 +272,18 @@ shinyServer(function(input, output, session) {
     }
   },height = 400,width = 600)
   
+  output$pivot <- renderRpivotTable({
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      
+      if ( is.null(vr$data$analytics) ) {return(NULL)}
+      PSNUxIM_pivot(vr)
+      
+    } else {
+      NULL
+    }
+  })
   
   output$hts_recency<-DT::renderDataTable({ 
     
@@ -269,6 +291,7 @@ shinyServer(function(input, output, session) {
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
+      if (  is.null(vr$data$analytics) ) { return(NULL) }
       r<-recencyComparison(vr)
       DT::datatable(r,
                     options = list(pageLength = 25,columnDefs = list(list(
@@ -289,16 +312,36 @@ shinyServer(function(input, output, session) {
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
+      analytics<-
+        vr %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"analytics") 
+      
+      if (is.null(analytics)) {return(NULL)} else {
+        modalitySummaryChart(analytics)
+      }
+        
+    } else {
+      NULL
+    }
+    
+  },height = 600,width = 800)
+  
+  output$modality_yield <- renderPlot({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
       vr  %>% 
         purrr::pluck(.,"data") %>%
         purrr::pluck(.,"analytics") %>%
-        modalitySummaryChart()
+        modalityYieldChart()
       
     } else {
       NULL
     }
     
-  },height = 400,width = 600)
+  },height = 400,width = 600)  
   
   output$modality_yield <- renderPlot({ 
     
@@ -338,6 +381,8 @@ shinyServer(function(input, output, session) {
     vr<-validation_results()
     
     if (!inherits(vr,"error") & !is.null(vr)){
+      
+      if ( is.null(vr$data$analytics) )  { return(NULL) }
       
       table_formatted<-modalitySummaryTable(vr$data$analytics) %>%
         dplyr::mutate(
@@ -444,8 +489,7 @@ shinyServer(function(input, output, session) {
     }
   )
   
-  
-  
+
   output$downloadValidationResults <- downloadHandler(
     filename = function() {
       
@@ -474,6 +518,45 @@ shinyServer(function(input, output, session) {
     }
   )
   
+  
+  output$compare <- downloadHandler(
+    filename = function() {
+      
+      prefix <- "comparison"
+      
+      date<-format(Sys.time(),"%Y%m%d_%H%M%S")
+      
+      paste0(paste(prefix,date,sep="_"),".xlsx")
+    },
+    content = function(file) {
+      
+      #Create a new workbook
+      wb <- openxlsx::createWorkbook()
+      
+      d<-validation_results()
+      d_compare<-datapackr::compareData_DatapackVsDatim(d)
+      
+      openxlsx::addWorksheet(wb,"PSNUxIM without dedupe")
+      openxlsx::writeDataTable(wb = wb,
+                               sheet = "PSNUxIM without dedupe",x = d_compare$psnu_x_im_wo_dedup)
+      
+      
+      openxlsx::addWorksheet(wb,"PSNU with dedupe")
+      openxlsx::writeDataTable(wb = wb,
+                               sheet = "PSNU with dedupe",x = d_compare$psnu_w_dedup)
+      
+      datapack_name <-d$info$datapack_name
+      
+      flog.info(
+        paste0("Comparison requested for ", datapack_name) 
+        ,
+        name = "datapack"
+      )
+      
+      openxlsx::saveWorkbook(wb,file=file,overwrite = TRUE)
+      
+    }
+  )
   
   output$downloadFlatPack <- downloadHandler(
     filename = function() {

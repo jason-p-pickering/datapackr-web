@@ -1,3 +1,25 @@
+PSNUxIM_pivot<-function(d){
+  
+  pivot<- d  %>% 
+    purrr::pluck("data") %>% 
+    purrr::pluck("analytics") %>% 
+    dplyr::select(indicator,
+      dataelement_name,
+                  psnu,
+                  mechanism_code,
+                  partner= partner_desc,
+                  agency = funding_agency,
+                  value = target_value) %>% 
+    dplyr::group_by(indicator,dataelement_name,psnu,mechanism_code,partner,agency) %>% 
+    dplyr::summarise(value = sum(value)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(mechanism_code = ifelse(mechanism_code == "HllvX50cXC0","default",mechanism_code))
+  
+  rpivotTable(data =   pivot   ,  rows = c( "dataelement_name"),
+              vals = "value", aggregatorName = "Integer Sum", rendererName = "Table"
+              , width="70%", height="700px")
+}
+
 modalitySummaryChart <- function(df) {
   
   df %>% 
@@ -235,7 +257,7 @@ subnatPyramidsChart <- function(d){
   
   if (is.null(df)) {return(NULL)}
   
-   df %<>%
+  df %<>%
     dplyr::inner_join( indicator_map , by = "dataelement_id") %>% 
     dplyr::filter(indicator_code == "TX_CURR.N.Age_Sex_HIVStatus.T" | 
                     indicator_code == "TX_PVLS.N.Age_Sex_Indication_HIVStatus.T.Routine"  | 
@@ -256,7 +278,7 @@ subnatPyramidsChart <- function(d){
     )
     ) 
   
-   if ( NROW(df) == 0 ) {return(NULL)}
+  if ( NROW(df) == 0 ) {return(NULL)}
   
   y_lim<-max(df$value)
   
@@ -338,8 +360,6 @@ kpCascadeChart <- function(d){
   
 }
 
-kpCascadeChart(d)
-
 vlsTestingChart <- function(df) {
   
   if (is.null(df)) {return(NULL)}
@@ -400,4 +420,3 @@ snuSelector <- function(df){
   }
 
 }
-
