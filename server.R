@@ -1,6 +1,7 @@
 
 library(shiny)
 library(shinyjs)
+library(shinyWidgets)
 require(magrittr)
 require(dplyr)
 require(datimvalidation)
@@ -66,6 +67,8 @@ shinyServer(function(input, output, session) {
   
   output$ui <- renderUI({
     
+    vr <- validation_results()
+    
     if (user_input$authenticated == FALSE) {
       ##### UI code for login page
       fluidPage(
@@ -126,7 +129,11 @@ shinyServer(function(input, output, session) {
             tabPanel("HTS Summary Table",dataTableOutput("modality_table")),
             tabPanel("HTS Yield",plotOutput("modality_yield")),
             tabPanel("HTS Recency",dataTableOutput("hts_recency")),
-            tabPanel("Epi Cascade Pyramid",plotOutput("epi_cascade"))
+            tabPanel("VLS Testing",plotOutput("vls_summary")),
+            tabPanel("Epi Cascade Pyramid",pickerInput("epiCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
+                     plotOutput("epi_cascade")),
+            tabPanel("KP Cascade Pyramid",pickerInput("kpCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
+                     plotOutput("kp_cascade"))
             
           ))
         ))
@@ -242,6 +249,18 @@ shinyServer(function(input, output, session) {
       NULL
     }
   },height = 400,width = 600)
+
+  output$kp_cascade<-renderPlot({ 
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      
+      kpCascadeChart(vr)
+      
+    } else {
+      NULL
+    }
+  },height = 400,width = 600)
   
   
   output$hts_recency<-DT::renderDataTable({ 
@@ -296,7 +315,24 @@ shinyServer(function(input, output, session) {
     }
     
   },height = 400,width = 600)  
+
+  output$vls_summary <- renderPlot({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      vr  %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"analytics") %>%
+        vlsTestingChart()
+      
+    } else {
+      NULL
+    }
+    
+  },height = 400,width = 600)  
   
+    
   output$modality_table<-DT::renderDataTable({
     
     vr<-validation_results()

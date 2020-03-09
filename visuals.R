@@ -286,3 +286,118 @@ subnatPyramidsChart <- function(d){
           panel.grid.minor.y = element_blank())
   
 }
+
+kpCascadeChart <- function(d){
+  
+  df <- d %>%
+    purrr::pluck(.,"data") %>%
+    purrr::pluck(.,"analytics") 
+  
+  if (is.null(df)) {return(NULL)}
+  
+  df %<>%
+    dplyr::filter(dataelement_name == "IMPATT.PLHIV (N, SUBNAT, Age/Sex/HIVStatus) TARGET:" | 
+                    dataelement_name == "KP_ESTIMATES (N, SUBNAT, PositiveEstimate/HIVStatus) TARGET: Estimated Key Pop" |
+                    dataelement_name == "TX_CURR (N, DSD, Age/Sex/HIVStatus) TARGET: Receiving ART" | 
+                    dataelement_name == "TX_CURR (N, DSD, KeyPop/HIVStatus) TARGET: Receiving ART" |
+                    dataelement_name == "TX_PVLS (N, DSD, Age/Sex/Indication/HIVStatus) TARGET: Viral Load Documented"  | 
+                    dataelement_name == "TX_PVLS (N, DSD, KeyPop/HIVStatus) TARGET: Viral Load Documented"
+                    ) %>%
+    dplyr::mutate(indicator = ifelse(indicator == "KP_ESTIMATES","PLHIV",indicator)) %>%
+    dplyr::mutate(kp = ifelse(is.na(key_population),"GenPop","KeyPop")) %>%
+    dplyr::select(indicator,kp,target_value) %>%
+    dplyr::group_by(indicator,kp) %>%
+    dplyr::summarise(value = sum(target_value)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(lbl = paste0(indicator,".",kp))
+  
+  if ( NROW(df) == 0 ) {return(NULL)}
+  
+  y_lim<-max(df$value)
+  
+  df %>%
+    ggplot(aes(x = indicator, y = value, fill = lbl)) +
+    geom_bar(data = df,
+             stat = "identity",
+             position = "identity") +
+    geom_text(aes(label = scales::comma(value),vjust=-0.25)) +
+    labs( x = "", y = "",
+          title = "COP20/FY21 Epidemic Cascade Age & Sex Pyramid",
+          subtitle = "Comparison of General and Key Populations with HIV, on Treatment, and Virally Suppressed") +
+    geom_hline(yintercept = 0, size=1) +
+    scale_fill_manual(values = c("#ceb966","#9cb084","#6bb1c9","#6585cf","#7e6bc9","#a379bb")) +
+    scale_y_continuous(limits = c(0,y_lim*1.1), labels = scales::comma) +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          text = element_text(color = "#595959", size =14),
+          plot.title = element_text(face = "bold"),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.y = element_line(color = "#595959"))
+  
+}
+
+kpCascadeChart(d)
+
+vlsTestingChart <- function(df) {
+  
+  if (is.null(df)) {return(NULL)}
+  
+  df %<>%
+    dplyr::filter(indicator == "TX_CURR" | 
+                    indicator == "TX_PVLS") %>%
+    dplyr::select(SNU1 = snu1,indicator,numerator_denominator,target_value) %>% 
+    dplyr::mutate(indicator = ifelse(
+      indicator == "TX_CURR","TX_CURR",ifelse(
+        indicator == "TX_PVLS" & numerator_denominator == "Numerator","TX_PVLS (N)",ifelse(
+          indicator == "TX_PVLS" & numerator_denominator == "Denominator","TX_PVLS (D)",NA
+        )))) %>%
+    dplyr::mutate(SNU1 = ifelse(substr(SNU1,0,9)=="_Military","Military",SNU1)) %>%
+    dplyr::group_by(SNU1,indicator) %>%
+    dplyr::summarise(value = sum(target_value)) %>%
+    dplyr::mutate(freq = value/max(value)) %>%
+    dplyr::mutate(sort_col = min(freq)) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(desc(sort_col),indicator)
+  
+  if ( NROW(df) == 0 ) {return(NULL)}
+  
+  df %>%
+    ggplot(aes(x = reorder(SNU1,sort_col), y = freq, fill = indicator)) +
+    geom_bar(data = df,
+             stat = "identity",
+             position = "identity") +
+    coord_flip() +
+    labs( x = "", y = "",
+          title = "COP20/FY21 Viral Load Testing Coverage",
+          subtitle = "Percentage of Population Currently on Treatment Eligible and Targeted for VLS Testing") +
+    geom_hline(yintercept = 0, size=1) +
+    scale_fill_manual(values = c(	"#B2182B", "#EF8A62","#67A9CF")) +
+    scale_y_continuous(labels = percent) +
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
+          text = element_text(color = "#595959", size =14),
+          plot.title = element_text(face = "bold"),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          panel.grid.major.x = element_line(color = "#595959"),
+          panel.grid.minor.y = element_blank())
+  
+}
+
+snuSelector <- function(df){
+  
+  if (!inherits(df,"error") & !is.null(df)){
+    df  %>% 
+      purrr::pluck(.,"data") %>%
+      purrr::pluck(.,"analytics") %>%
+      purrr::pluck(.,"snu1") %>% 
+      unique()
+    
+  } else {
+    NULL
+  }
+
+}
+
