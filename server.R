@@ -349,22 +349,6 @@ shinyServer(function(input, output, session) {
     
   },height = 400,width = 600)  
   
-  output$modality_yield <- renderPlot({ 
-    
-    vr<-validation_results()
-    
-    if (!inherits(vr,"error") & !is.null(vr)){
-      vr  %>% 
-        purrr::pluck(.,"data") %>%
-        purrr::pluck(.,"analytics") %>%
-        modalityYieldChart()
-      
-    } else {
-      NULL
-    }
-    
-  },height = 400,width = 600)  
-  
   output$vls_summary <- renderPlot({ 
     
     vr<-validation_results()
