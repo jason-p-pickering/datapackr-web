@@ -137,10 +137,16 @@ shinyServer(function(input, output, session) {
             tabPanel("HTS Yield",plotOutput("modality_yield")),
             tabPanel("HTS Recency",dataTableOutput("hts_recency")),
             tabPanel("VLS Testing",plotOutput("vls_summary")),
-            tabPanel("Epi Cascade Pyramid",pickerInput("epiCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
+            tabPanel("Epi Cascade Pyramid",
+                     pickerInput("epiCascadeInput","SNU1", 
+                                 choices= snuSelector(vr), 
+                                 options = list(`actions-box` = TRUE),multiple = T),
                      plotOutput("epi_cascade")),
-            tabPanel("KP Cascade Pyramid",pickerInput("kpCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
-                     plotOutput("kp_cascade"))
+            tabPanel("KP Cascade Pyramid",
+                     pickerInput("kpCascadeInput","SNU1", 
+                                 choices= snuSelector(vr), 
+                                 options = list(`actions-box` = TRUE),multiple = T),
+                     plotOutput("kp_cascade")),
             tabPanel("PSNUxIM Pivot",rpivotTableOutput({"pivot"}))
             
           ))
@@ -259,7 +265,7 @@ shinyServer(function(input, output, session) {
       NULL
     }
   },height = 600,width = 800)
-
+  
   output$kp_cascade<-renderPlot({ 
     vr<-validation_results()
     
@@ -320,7 +326,7 @@ shinyServer(function(input, output, session) {
       if (is.null(analytics)) {return(NULL)} else {
         modalitySummaryChart(analytics)
       }
-        
+      
     } else {
       NULL
     }
@@ -358,7 +364,7 @@ shinyServer(function(input, output, session) {
     }
     
   },height = 400,width = 600)  
-
+  
   output$vls_summary <- renderPlot({ 
     
     vr<-validation_results()
@@ -375,7 +381,6 @@ shinyServer(function(input, output, session) {
     
   },height = 400,width = 600)  
   
-    
   output$modality_table<-DT::renderDataTable({
     
     vr<-validation_results()
@@ -441,11 +446,11 @@ shinyServer(function(input, output, session) {
       return(NULL)
     }
     
-    if (NROW(vr_results) == 0 ) {
+    if (NROW(vr) == 0 ) {
       
       data.frame(message="Congratulations! No validation rule issues found!")
-    
-      } else {
+      
+    } else {
       vr
     }
   })
@@ -483,7 +488,7 @@ shinyServer(function(input, output, session) {
     }
   )
   
-
+  
   output$downloadValidationResults <- downloadHandler(
     filename = function() {
       
