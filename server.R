@@ -396,7 +396,7 @@ shinyServer(function(input, output, session) {
       NULL
     }
     
-  },height = 400,width = 600)  
+  },height = 600,width = 800)  
   
   output$modality_table<-DT::renderDataTable({
     
