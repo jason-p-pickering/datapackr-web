@@ -67,9 +67,23 @@ shinyServer(function(input, output, session) {
     flog.info(paste0("User ",input$user_name, " logged in."), name="datapack")
   })  
   
+  epi_graph_filter <- reactiveValues( snu_filter=NULL )
+  
+  observeEvent(input$epiCascadeInput,{
+    epi_graph_filter$snu_filter<-input$epiCascadeInput
+  })
+  
+  kpCascadeInput_filter <- reactiveValues( snu_filter=NULL )
+  
+  observeEvent(input$kpCascadeInput,{
+    
+    kpCascadeInput_filter$snu_filter<-input$kpCascadeInput
+  })
+  
   output$ui <- renderUI({
     
     vr <- validation_results()
+    
     
     if (user_input$authenticated == FALSE) {
       ##### UI code for login page
@@ -256,10 +270,11 @@ shinyServer(function(input, output, session) {
   output$epi_cascade<-renderPlot({ 
     
     vr<-validation_results()
+    epi_graph_filter_results<-epi_graph_filter$snu_filter
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
-      subnatPyramidsChart(vr)
+      subnatPyramidsChart(vr,epi_graph_filter_results)
       
     } else {
       NULL
@@ -267,11 +282,13 @@ shinyServer(function(input, output, session) {
   },height = 600,width = 800)
   
   output$kp_cascade<-renderPlot({ 
+    
     vr<-validation_results()
+    kpCascadeInput_filter_results<-kpCascadeInput_filter$snu_filter
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
-      kpCascadeChart(vr)
+      kpCascadeChart(vr,kpCascadeInput_filter_results)
       
     } else {
       NULL
@@ -332,6 +349,22 @@ shinyServer(function(input, output, session) {
     }
     
   },height = 600,width = 800)
+  
+  output$modality_yield <- renderPlot({ 
+    
+    vr<-validation_results()
+    
+    if (!inherits(vr,"error") & !is.null(vr)){
+      vr  %>% 
+        purrr::pluck(.,"data") %>%
+        purrr::pluck(.,"analytics") %>%
+        modalityYieldChart()
+      
+    } else {
+      NULL
+    }
+    
+  },height = 400,width = 600)  
   
   output$modality_yield <- renderPlot({ 
     
@@ -471,7 +504,6 @@ shinyServer(function(input, output, session) {
       removeModal()
     }
   )
-  
   
   output$downloadValidationResults <- downloadHandler(
     filename = function() {

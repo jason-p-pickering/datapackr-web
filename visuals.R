@@ -266,7 +266,7 @@ recencyComparison <- function(d) {
   } 
 }
 
-subnatPyramidsChart <- function(d){
+subnatPyramidsChart <- function(d,epi_graph_filter_results){
   
   indicator_map<- datapackr::map_DataPack_DATIM_DEs_COCs[,c("dataelement","indicator_code")] %>% 
     dplyr::distinct() %>% 
@@ -277,6 +277,12 @@ subnatPyramidsChart <- function(d){
     purrr::pluck(.,"analytics") 
   
   if (is.null(df)) {return(NULL)}
+  
+  if( length(epi_graph_filter_results) > 0 & !is.null(epi_graph_filter_results)) {
+    df %<>% dplyr::filter(snu1 %in% epi_graph_filter_results )
+  }
+  
+  if ( NROW(df) == 0 ) { return(NULL) }
   
   df %<>%
     dplyr::inner_join( indicator_map , by = "dataelement_id") %>% 
@@ -330,13 +336,20 @@ subnatPyramidsChart <- function(d){
   
 }
 
-kpCascadeChart <- function(d){
+kpCascadeChart <- function(d,kpCascadeInput_filter){
   
   df <- d %>%
     purrr::pluck(.,"data") %>%
     purrr::pluck(.,"analytics") 
   
   if (is.null(df)) {return(NULL)}
+  
+  if( length(kpCascadeInput_filter) > 0 & !is.null(kpCascadeInput_filter)) {
+    df %<>% dplyr::filter(snu1 %in% kpCascadeInput_filter )
+  }
+  
+  if ( NROW(df) == 0 ) { return(NULL) }
+  
   
   df %<>%
     dplyr::filter(dataelement_name == "IMPATT.PLHIV (N, SUBNAT, Age/Sex/HIVStatus) TARGET:" | 
