@@ -67,9 +67,23 @@ shinyServer(function(input, output, session) {
     flog.info(paste0("User ",input$user_name, " logged in."), name="datapack")
   })  
   
+  epi_graph_filter <- reactiveValues( snu_filter=NULL )
+  
+  observeEvent(input$epiCascadeInput,{
+    epi_graph_filter$snu_filter<-input$epiCascadeInput
+  })
+  
+  kpCascadeInput_filter <- reactiveValues( snu_filter=NULL )
+  
+  observeEvent(input$kpCascadeInput,{
+    
+    kpCascadeInput_filter$snu_filter<-input$kpCascadeInput
+  })
+  
   output$ui <- renderUI({
     
     vr <- validation_results()
+    
     
     if (user_input$authenticated == FALSE) {
       ##### UI code for login page
@@ -137,10 +151,16 @@ shinyServer(function(input, output, session) {
             tabPanel("HTS Yield",plotOutput("modality_yield")),
             tabPanel("HTS Recency",dataTableOutput("hts_recency")),
             tabPanel("VLS Testing",plotOutput("vls_summary")),
-            tabPanel("Epi Cascade Pyramid",pickerInput("epiCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
+            tabPanel("Epi Cascade Pyramid",
+                     pickerInput("epiCascadeInput","SNU1", 
+                                 choices= snuSelector(vr), 
+                                 options = list(`actions-box` = TRUE),multiple = T),
                      plotOutput("epi_cascade")),
-            tabPanel("KP Cascade Pyramid",pickerInput("kpCascadeInput","SNU1", choices= snuSelector(vr), options = list(`actions-box` = TRUE),multiple = T),
-                     plotOutput("kp_cascade"))
+            tabPanel("KP Cascade Pyramid",
+                     pickerInput("kpCascadeInput","SNU1", 
+                                 choices= snuSelector(vr), 
+                                 options = list(`actions-box` = TRUE),multiple = T),
+                     plotOutput("kp_cascade")),
             tabPanel("PSNUxIM Pivot",rpivotTableOutput({"pivot"}))
             
           ))
@@ -250,22 +270,25 @@ shinyServer(function(input, output, session) {
   output$epi_cascade<-renderPlot({ 
     
     vr<-validation_results()
+    epi_graph_filter_results<-epi_graph_filter$snu_filter
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
-      subnatPyramidsChart(vr)
+      subnatPyramidsChart(vr,epi_graph_filter_results)
       
     } else {
       NULL
     }
   },height = 600,width = 800)
-
+  
   output$kp_cascade<-renderPlot({ 
+    
     vr<-validation_results()
+    kpCascadeInput_filter_results<-kpCascadeInput_filter$snu_filter
     
     if (!inherits(vr,"error") & !is.null(vr)){
       
-      kpCascadeChart(vr)
+      kpCascadeChart(vr,kpCascadeInput_filter_results)
       
     } else {
       NULL
@@ -320,7 +343,7 @@ shinyServer(function(input, output, session) {
       if (is.null(analytics)) {return(NULL)} else {
         modalitySummaryChart(analytics)
       }
-        
+      
     } else {
       NULL
     }
@@ -358,7 +381,7 @@ shinyServer(function(input, output, session) {
     }
     
   },height = 400,width = 600)  
-
+  
   output$vls_summary <- renderPlot({ 
     
     vr<-validation_results()
@@ -375,7 +398,6 @@ shinyServer(function(input, output, session) {
     
   },height = 400,width = 600)  
   
-    
   output$modality_table<-DT::renderDataTable({
     
     vr<-validation_results()
@@ -432,28 +454,22 @@ shinyServer(function(input, output, session) {
   
   output$vr_rules<-DT::renderDataTable({
     
-    vr<-validation_results()
+    vr<-validation_results() %>%
+      purrr::pluck(.,"tests") %>%
+      purrr::pluck(.,"vr_rules_check")
     
-    if ( is.null(vr)) {
+    if ( inherits(vr,"error")  | is.null(vr) ){
+      
       return(NULL)
     }
     
-    if (!inherits(vr,"error")  & !is.null(vr)){
+    if (NROW(vr) == 0 ) {
       
-      vr_results <- vr %>%
-        purrr::pluck(.,"tests") %>%
-        purrr::pluck(.,"vr_rules_check")
+      data.frame(message="Congratulations! No validation rule issues found!")
       
-    }  else {
-      return(NULL)
+    } else {
+      vr
     }
-    
-    if (NROW(vr_results) == 0 ) {
-      return(data.frame(message="Congratulations! No validation rule issues found!"))
-    }
-    
-    vr_results
-    
   })
   
   output$downloadDataPack <- downloadHandler(
@@ -489,7 +505,6 @@ shinyServer(function(input, output, session) {
     }
   )
   
-
   output$downloadValidationResults <- downloadHandler(
     filename = function() {
       

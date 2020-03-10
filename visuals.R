@@ -4,7 +4,7 @@ PSNUxIM_pivot<-function(d){
     purrr::pluck("data") %>% 
     purrr::pluck("analytics") %>% 
     dplyr::select(indicator,
-      dataelement_name,
+                  dataelement_name,
                   psnu,
                   mechanism_code,
                   partner= partner_desc,
@@ -53,32 +53,53 @@ modalitySummaryChart <- function(df) {
   
 }
 
-modalityYieldChart <- function(df) {
+modalitySummaryTable<-function(df){
   
-  df %<>% 
+  hts<- df %>% 
     dplyr::filter(!is.na(hts_modality)) %>%
     dplyr::filter(resultstatus_specific != "Known at Entry Positive") %>% 
-    dplyr::group_by(hts_modality, resultstatus_inclusive) %>%
-    dplyr::summarise(target_value = sum(target_value)) %>%
+    dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
+    dplyr::summarise(value = sum(target_value)) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(freq = target_value/sum(target_value)) %>%
-    dplyr::filter(resultstatus_inclusive == "Positive") 
+    dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
+    dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>% 
+    tidyr::pivot_wider(names_from = resultstatus_inclusive, values_from = value ) %>% 
+    dplyr::mutate(yield = Positive/(Negative + Positive) * 100,
+                  modality_share = Positive / sum(Positive) * 100 ,
+                  Total = Positive + Negative) %>% 
+    dplyr::select(hts_modality,Positive,Total,yield,modality_share)
   
-  x_lim <- max(df$freq)
+  hts_total<- hts %>% 
+    dplyr::select(Positive,Total) %>% 
+    dplyr::mutate(hts_modality = "Total") %>% 
+    dplyr::group_by(hts_modality) %>% 
+    dplyr::summarise_all(sum) %>% 
+    dplyr::mutate(yield = Positive/Total * 100,
+                  modality_share = 100)
+  
+  dplyr::bind_rows(hts,hts_total)
+  
+}
+
+modalityYieldChart <- function(df) {
+  
+  df <- modalitySummaryTable(df)
+  
+  x_lim <- max(df$yield)
   
   df %>%
     ggplot(aes(
-      y = freq,
-      x = reorder(hts_modality, freq)
+      y = yield,
+      x = reorder(hts_modality, yield)
     )) +
     geom_col(fill="#67A9CF") +
-    geom_text(aes(label = scales::percent(freq,accuracy=0.01),hjust=-0.25)) +
-    scale_y_continuous(labels = scales::percent,limits = c(0,x_lim*1.1)) +
+    geom_text(aes(label = sprintf("%0.1f",yield),hjust=-0.25)) +
+    scale_y_continuous(limits = c(0,x_lim*1.1)) +
     coord_flip() +
     scale_fill_manual(values = c("#2166AC")) +
     labs(y = "", x = "",
          title = "COP20/FY21 Testing Yields",
-         subtitle = "modalities ordered by yield rates") +
+         subtitle = "Modalities ordered by yield rates") +
     theme(legend.position = "bottom",
           legend.title = element_blank(),
           text = element_text(color = "#595959", size = 14),
@@ -245,7 +266,7 @@ recencyComparison <- function(d) {
   } 
 }
 
-subnatPyramidsChart <- function(d){
+subnatPyramidsChart <- function(d,epi_graph_filter_results){
   
   indicator_map<- datapackr::map_DataPack_DATIM_DEs_COCs[,c("dataelement","indicator_code")] %>% 
     dplyr::distinct() %>% 
@@ -256,6 +277,12 @@ subnatPyramidsChart <- function(d){
     purrr::pluck(.,"analytics") 
   
   if (is.null(df)) {return(NULL)}
+  
+  if( length(epi_graph_filter_results) > 0 & !is.null(epi_graph_filter_results)) {
+    df %<>% dplyr::filter(snu1 %in% epi_graph_filter_results )
+  }
+  
+  if ( NROW(df) == 0 ) { return(NULL) }
   
   df %<>%
     dplyr::inner_join( indicator_map , by = "dataelement_id") %>% 
@@ -309,13 +336,20 @@ subnatPyramidsChart <- function(d){
   
 }
 
-kpCascadeChart <- function(d){
+kpCascadeChart <- function(d,kpCascadeInput_filter){
   
   df <- d %>%
     purrr::pluck(.,"data") %>%
     purrr::pluck(.,"analytics") 
   
   if (is.null(df)) {return(NULL)}
+  
+  if( length(kpCascadeInput_filter) > 0 & !is.null(kpCascadeInput_filter)) {
+    df %<>% dplyr::filter(snu1 %in% kpCascadeInput_filter )
+  }
+  
+  if ( NROW(df) == 0 ) { return(NULL) }
+  
   
   df %<>%
     dplyr::filter(dataelement_name == "IMPATT.PLHIV (N, SUBNAT, Age/Sex/HIVStatus) TARGET:" | 
@@ -324,7 +358,7 @@ kpCascadeChart <- function(d){
                     dataelement_name == "TX_CURR (N, DSD, KeyPop/HIVStatus) TARGET: Receiving ART" |
                     dataelement_name == "TX_PVLS (N, DSD, Age/Sex/Indication/HIVStatus) TARGET: Viral Load Documented"  | 
                     dataelement_name == "TX_PVLS (N, DSD, KeyPop/HIVStatus) TARGET: Viral Load Documented"
-                    ) %>%
+    ) %>%
     dplyr::mutate(indicator = ifelse(indicator == "KP_ESTIMATES","PLHIV",indicator)) %>%
     dplyr::mutate(kp = ifelse(is.na(key_population),"GenPop","KeyPop")) %>%
     dplyr::select(indicator,kp,target_value) %>%
@@ -418,5 +452,5 @@ snuSelector <- function(df){
   } else {
     NULL
   }
-
+  
 }
