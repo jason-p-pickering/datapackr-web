@@ -175,35 +175,6 @@ validateMechanisms<-function(d) {
   
 }
 
-modalitySummaryTable<-function(df){
-  
-  hts<- df %>% 
-    dplyr::filter(!is.na(hts_modality)) %>%
-    dplyr::filter(resultstatus_specific != "Known at Entry Positive") %>% 
-    dplyr::group_by(resultstatus_inclusive, hts_modality) %>%
-    dplyr::summarise(value = sum(target_value)) %>%
-    dplyr::ungroup() %>%
-    dplyr::arrange(resultstatus_inclusive, desc(resultstatus_inclusive)) %>% 
-    dplyr::mutate(resultstatus_inclusive = factor(resultstatus_inclusive, c("Unknown","Negative", "Positive"))) %>% 
-    tidyr::pivot_wider(names_from = resultstatus_inclusive, values_from = value ) %>% 
-    dplyr::mutate(yield = Positive/(Negative + Positive) * 100,
-                  modality_share = Positive / sum(Positive) * 100 ,
-                  Total = Positive + Negative) %>% 
-    dplyr::select(hts_modality,Positive,Total,yield,modality_share)
-  
-  hts_total<- hts %>% 
-    dplyr::select(Positive,Total) %>% 
-    dplyr::mutate(hts_modality = "Total") %>% 
-    dplyr::group_by(hts_modality) %>% 
-    dplyr::summarise_all(sum) %>% 
-    dplyr::mutate(yield = Positive/Total * 100,
-                  modality_share = 100)
-  
-  dplyr::bind_rows(hts,hts_total)
-  
-}
-
-
 
 getCountryNameFromUID<-function(uid) {
   
