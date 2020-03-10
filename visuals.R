@@ -417,12 +417,14 @@ vlsTestingChart <- function(df) {
   
   if ( NROW(df) == 0 ) {return(NULL)}
   
+  y_lim <- (min(df$freq)%/%.1)/10
+  
   df %>%
     ggplot(aes(x = reorder(SNU1,sort_col), y = freq, fill = indicator)) +
     geom_bar(data = df,
              stat = "identity",
              position = "identity") +
-    coord_flip() +
+    coord_flip(ylim=c(y_lim,1)) +
     labs( x = "", y = "",
           title = "COP20/FY21 Viral Load Testing Coverage",
           subtitle = "Percentage of Population Currently on Treatment Eligible and Targeted for VLS Testing") +
