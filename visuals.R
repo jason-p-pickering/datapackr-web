@@ -93,8 +93,8 @@ modalityYieldChart <- function(df) {
       x = reorder(hts_modality, yield)
     )) +
     geom_col(fill="#67A9CF") +
-    geom_text(aes(label = sprintf("%0.1f",yield),hjust=-0.25)) +
-    scale_y_continuous(limits = c(0,x_lim*1.1)) +
+    geom_text(aes(label = percent(yield,accuracy=0.1,scale=1),hjust=-0.25)) +
+    scale_y_continuous(limits = c(0,x_lim*1.1),labels = percent_format(accuracy=1,scale=1)) +
     coord_flip() +
     scale_fill_manual(values = c("#2166AC")) +
     labs(y = "", x = "",
@@ -417,12 +417,14 @@ vlsTestingChart <- function(df) {
   
   if ( NROW(df) == 0 ) {return(NULL)}
   
+  y_lim <- (min(df$freq)%/%.1)/10
+  
   df %>%
     ggplot(aes(x = reorder(SNU1,sort_col), y = freq, fill = indicator)) +
     geom_bar(data = df,
              stat = "identity",
              position = "identity") +
-    coord_flip() +
+    coord_flip(ylim=c(y_lim,1)) +
     labs( x = "", y = "",
           title = "COP20/FY21 Viral Load Testing Coverage",
           subtitle = "Percentage of Population Currently on Treatment Eligible and Targeted for VLS Testing") +
