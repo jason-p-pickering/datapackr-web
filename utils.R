@@ -45,7 +45,7 @@ validatePSNUData <- function(d) {
                                 getOption("organisationUnit"),
                                 "code",
                                 "id")
-  datasets_uid <- c("nIHNMxuPUOR", "sBv1dj90IX6")
+  datasets_uid <- c("Pmc0yYAIi1t", "s1sxJuqXsvV")
   if ( Sys.info()["sysname"] == "Linux") {
     ncores <- parallel::detectCores() - 1
     doMC::registerDoMC( cores = ncores )
@@ -54,9 +54,10 @@ validatePSNUData <- function(d) {
     is_parallel <- FALSE
   }
   
-  vr_violations <- datimvalidation::validateData(d$datim$MER,
+  vr_violations <- datimvalidation::validateData(vr_data,
                                                  datasets = datasets_uid,
-                                                 parallel = is_parallel)
+                                                 parallel = is_parallel,
+                                                 return_violations_only = TRUE)
   
   # rules_to_keep <- c(
   #   "L76D9NGEPRS",
