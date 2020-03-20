@@ -104,7 +104,6 @@ validatePSNUData <- function(d) {
       
       d$tests$vr_rules_check <- vr_violations  %>%
         dplyr::select(name, ou_name, mech_code, formula, diff,abs_diff) %>%
-        dplyr::mutate(name = gsub(pattern = " DSD,", "", name)) %>% 
         dplyr::rename("Validation rule" = name,
                       "PSNU" = ou_name,
                       "Mechanism" = mech_code,
