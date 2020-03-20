@@ -1,0 +1,14 @@
+default:
+  baseurl: "https://www.datim.org/"
+  log_path: "/var/log/datapack/datapack.log"
+  aws_region: "us-east-2"
+  s3_bucket: "dz1-sandbox.pepfar.data.datapack"
+  deploy_location: "/srv/shiny-server/deployed/cop20/"
+
+dev: 
+  baseurl: "https://test-mer2.datim.org/"
+  log_path: "/Users/sam/var/log/datapack/datapack.log"
+  aws_region: "us-east-2"
+  s3_bucket: "dz1-sandbox.pepfar.data.datapack"
+  deploy_location: "/home/bobbytables/shiny/datapackr-web/"
+  
