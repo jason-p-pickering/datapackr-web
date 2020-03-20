@@ -91,12 +91,15 @@ validatePSNUData <- function(d) {
     #     return(d)
     #   }
     
-    diff <- gsub(" <= ", "/", vr_violations$formula)
+    diff <- gsub(" [<>]= ", "/", vr_violations$formula)
     vr_violations$diff <- sapply( diff, function(x) { round( ( eval( parse( text = x ) ) - 1) * 100, 2 ) })
+    vr_violations$diff <-ifelse(vr_violations$rightSide.expression == 0 | vr_violations$leftSide.expression == 0,
+                                NA,
+                                vr_violations$diff)
     
     #vr_violations %<>% dplyr::filter(diff >= 5)
     
-    diff <- gsub(" <= ", "-", vr_violations$formula)
+    diff <- gsub(" [<>]= ", "-", vr_violations$formula)
     vr_violations$abs_diff <- sapply( diff, function(x) { abs( eval( parse( text = x ) ) ) })
     
     
