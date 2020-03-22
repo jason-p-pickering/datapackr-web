@@ -62,9 +62,19 @@ shinyServer(function(input, output, session) {
   })
   
   observeEvent(input$login_button, {
-    is_logged_in<-FALSE
-    user_input$authenticated <-DHISLogin(input$server,input$user_name,input$password)
-    flog.info(paste0("User ",input$user_name, " logged in."), name="datapack")
+    is_logged_in <- FALSE
+    user_input$authenticated <- DHISLogin(input$server, input$user_name, input$password)
+    if (user_input$authenticated) {
+      #user_input$user_orgunit<-getOption("organisationUnit")
+      flog.info(paste0("User ", input$user_name, " logged in."), name = "datapack")
+    } else {
+      sendSweetAlert(
+        session,
+        title = "Login failed",
+        text = "Please check your username/password!",
+        type = "error")
+      flog.info(paste0("User ", input$user_name, " login failed."), name = "datapack")
+    }
   })  
   
   epi_graph_filter <- reactiveValues( snu_filter=NULL )
