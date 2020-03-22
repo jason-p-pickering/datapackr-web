@@ -77,13 +77,11 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$kpCascadeInput,{
     
+    
     kpCascadeInput_filter$snu_filter<-input$kpCascadeInput
   })
   
   output$ui <- renderUI({
-    
-    vr <- validation_results()
-    
     
     if (user_input$authenticated == FALSE) {
       ##### UI code for login page
@@ -153,20 +151,20 @@ shinyServer(function(input, output, session) {
             tabPanel("VLS Testing",plotOutput("vls_summary")),
             tabPanel("Epi Cascade Pyramid",
                      pickerInput("epiCascadeInput","SNU1", 
-                                 choices= snuSelector(vr), 
+                                 choices= "", 
                                  options = list(`actions-box` = TRUE),multiple = T),
                      plotOutput("epi_cascade")),
             tabPanel("KP Cascade Pyramid",
                      pickerInput("kpCascadeInput","SNU1", 
-                                 choices= snuSelector(vr), 
+                                 choices= "", 
                                  options = list(`actions-box` = TRUE),multiple = T),
                      plotOutput("kp_cascade")),
             tabPanel("PSNUxIM Pivot",rpivotTableOutput({"pivot"}))
             
           ))
         ))
-    }
-  })
+  }
+})
   
   user_input <- reactiveValues(authenticated = FALSE, status = "")
   
@@ -253,6 +251,11 @@ shinyServer(function(input, output, session) {
           if ( d$info$missing_psnuxim_combos ) {
             shinyjs::enable("downloadDataPack")
           }
+          updatePickerInput(session = session, inputId = "kpCascadeInput",
+                            choices = snuSelector(d))
+          updatePickerInput(session = session, inputId = "epiCascadeInput",
+                            choices = snuSelector(d))
+          
         } else {
           #This should occur when there is no PSNUxIM tab and they want
           #to generate one. 
@@ -472,6 +475,8 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  snu_selector <- reactive({ validation_results() %>% snuSelector() })
+  
   output$downloadDataPack <- downloadHandler(
     filename = function() {
       
@@ -646,6 +651,7 @@ shinyServer(function(input, output, session) {
   output$messages <- renderUI({
     
     vr<-validation_results()
+    
     messages<-NULL
     
     if ( is.null(vr)) {
@@ -682,4 +688,4 @@ shinyServer(function(input, output, session) {
       writeLines(vr$info$warning_msg, file)
     }
   )
-})
+  })

@@ -178,7 +178,6 @@ validateMechanisms<-function(d) {
   
 }
 
-
 getCountryNameFromUID<-function(uid) {
   
   
