@@ -270,6 +270,15 @@ shinyServer(function(input, output, session) {
           #This should occur when there is no PSNUxIM tab and they want
           #to generate one. 
           shinyjs::enable("downloadDataPack")
+          hideTab(inputId = "main-panel", target = "Validation rules")
+          hideTab(inputId = "main-panel", target = "HTS Summary Chart")
+          hideTab(inputId = "main-panel", target = "HTS Summary Table")
+          hideTab(inputId = "main-panel", target = "HTS Yield")
+          hideTab(inputId = "main-panel", target = "VLS Testing")
+          hideTab(inputId = "main-panel", target = "Epi Cascade Pyramid")
+          hideTab(inputId = "main-panel", target = "KP Cascade Pyramid")
+          hideTab(inputId = "main-panel", target = "PSNUxIM Pivot")
+          hideTab(inputId = "main-panel", target = "HTS Recency")
         }
       }
     })
