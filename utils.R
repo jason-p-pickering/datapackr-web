@@ -159,8 +159,8 @@ validateMechanisms<-function(d) {
     dplyr::filter(enddate >= as.Date('2021-09-30')) %>%
     dplyr::pull(mechanism_code)
   
-  #Allow for dedupe
-  #mechs <- append("00000",mechs)
+  #Allow for the pseudo dedupe mechanism
+  mechs <- append("99999",mechs)
   
   bad_mechs<-vr_data[!(vr_data %in% mechs)]
   
@@ -170,7 +170,7 @@ validateMechanisms<-function(d) {
                   These MUST be reallocated to a valid mechanism
                   ",paste(bad_mechs,sep="",collapse=","))
     d$tests$bad_mechs<-bad_mechs
-    d$info$warningMsg<-append(msg,d$info$warningMsg)
+    d$info$warning_msg<-append(msg,d$info$warning_msg)
     d$info$had_error<-TRUE
   }
   
