@@ -191,6 +191,8 @@ getCountryNameFromUID<-function(uid) {
 
 archiveDataPacktoS3<-function(d,datapath,config) {
   
+  d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+  
   #Write an archived copy of the file
   s3<-paws::s3()
   tags<-c("tool","country_uids","cop_year","has_error","sane_name")
@@ -229,6 +231,9 @@ archiveDataPackErrorUI <- function(r) {
 }
 
 saveTimeStampLogToS3<-function(d) {
+  
+  d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+  
   #Write an archived copy of the file
   s3<-paws::s3()
   tags<-c("tool","country_uids","cop_year","has_error","sane_name")
@@ -329,6 +334,9 @@ prepareFlatMERExport<-function(d) {
 }
 
 sendMERDataToPAW<-function(d,config) {
+  
+  d$info$country_uids<-substr(paste0(d$info$country_uids,sep="",collapse="_"),0,25)
+  
   #Write the flatpacked output
   tmp <- tempfile()
   mer_data<-d$data$analytics
@@ -378,7 +386,7 @@ sendMERDataToPAW<-function(d,config) {
 
 sendValidationSummary<-function(vr,config) {
   
-  
+  vr$info$country_uids<-substr(paste0(vr$info$country_uids,sep="",collapse="_"),0,25)
   validation_summary<-validationSummary(vr)
   
   tmp <- tempfile()
